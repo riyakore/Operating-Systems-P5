@@ -78,6 +78,17 @@ trap(struct trapframe *tf)
     lapiceoi();
     break;
 
+  // added this case to set up the page fault handler to implement lazy allocation
+  // so when you allocate pages using wmap, they wont actually be allocated in physical memory
+  // but when you try to access the memory, this case will generate a page fault
+  // this page fault will be handled by the kernel
+  case T_PGFLT:
+    // if page fault address is part of the mapping i.e. lazy allocation
+	  // handle it
+    // else:
+      // cprintf("Segmentation Fault\n");
+      // kill the process
+
   //PAGEBREAK: 13
   default:
     if(myproc() == 0 || (tf->cs&3) == 0){

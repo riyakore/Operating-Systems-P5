@@ -184,6 +184,19 @@ fork(void)
   struct proc *np;
   struct proc *curproc = myproc();
 
+  // somewhere in this function, add copy on write when creating the child process
+  // so you need to use the set of same physical pages for the child process
+  // you need to also check that no one writes to this shared memory between the parent and the child
+  // also implement a mechanism or a system call if a write is issued to those shared pages in memory
+  // basically, call the page fault handler in trap.c to handle writes to these pages
+  // here in the fork function, you just mark everything as read-only in both child and parent page tables.
+  // if a write is issued, then call the page fault handler and duplicate the page
+  // define an integer called reference_count - this keeps track of how many processes reference to that page in physical memory
+  // you can increment and decrement this reference_count to keep track of the child and parent processes referencing this page
+  // use a static array to keep track of the reference count for each page
+  // assume max number of processes sharing a page wont be more than 256 - so reference count can fit in 1 byte
+  // after this, also implement lazy allocation to that the page table of the parent with all the mappings will be duplicated for the child process
+  
   // Allocate process.
   if((np = allocproc()) == 0){
     return -1;
@@ -230,6 +243,9 @@ exit(void)
   struct proc *curproc = myproc();
   struct proc *p;
   int fd;
+
+  // modify this function so that it removes all the mappings from the current process's address space
+  // use this to prevent memory leaks when a user program forgets to call wunmap before exiting
 
   if(curproc == initproc)
     panic("init exiting");

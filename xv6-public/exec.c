@@ -53,6 +53,7 @@ exec(char *path, char **argv)
       goto bad;
     if(ph.vaddr % PGSIZE != 0)
       goto bad;
+    // make changes to this if statement to include ELF flags as input and set the correct permissions on memory pages
     if(loaduvm(pgdir, (char*)ph.vaddr, ip, ph.off, ph.filesz) < 0)
       goto bad;
   }

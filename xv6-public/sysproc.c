@@ -89,3 +89,5 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+// insert the wmap and wunmap system calls here, include the wmap and wunmap files in the definitions and includes

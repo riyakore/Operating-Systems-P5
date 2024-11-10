@@ -100,6 +100,10 @@ struct segdesc {
 #define PTE_ADDR(pte)   ((uint)(pte) & ~0xFFF)
 #define PTE_FLAGS(pte)  ((uint)(pte) &  0xFFF)
 
+// adding my own constants to work with PTEs
+// bits 11-9 are available for the OS - so for us
+// use these bits to know if something was writable at the first place or not - if it is read-only, then you kill the process and use "segmentation fault"
+
 #ifndef __ASSEMBLER__
 typedef uint pte_t;
 
@@ -115,6 +119,7 @@ struct taskstate {
   uint *esp2;
   ushort ss2;
   ushort padding3;
+  // this is the CR3 register which holds the physical address of the page directory in x86
   void *cr3;         // Page directory base
   uint *eip;         // Saved state from last task switch
   uint eflags;
