@@ -6,6 +6,7 @@
 #include "mmu.h"
 #include "proc.h"
 #include "elf.h"
+#include "wmap.h"
 
 extern char data[];  // defined by kernel.ld
 pde_t *kpgdir;  // for use in scheduler()
@@ -383,6 +384,44 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
     va = va0 + PGSIZE;
   }
   return 0;
+}
+
+// added the wmap function
+uint
+wmap(uint addr, int length, int flags, int fd)
+{
+  struct proc *p = myproc();
+
+  // check for valid length
+  if (length <= 0){
+    return FAILED;
+  }
+
+  // check for required flags
+  if (!(flags & MAP_FIXED) || !(flags & MAP_SHARED)){
+    return FAILED;
+  }
+
+  // check for address validity if the MAP_FIXED is specified
+  if (addr < 0x60000000 || addr >= 0x80000000 || addr % PGSIZE != 0){
+    return FAILED;
+  }
+
+  // tracking the mapping for lazy alocation
+  if (p->num_mmaps >= MAX_WMMAP_INFO){
+    return FAILED;
+  }
+
+  struct mmap_region *region = &p->mmaps[p->num_mmaps++];
+  region->start_addr = addr;
+  region->length = length;
+  region->flags = flags;
+  region->fd = (flags & MAP_ANONYMOUS) ? -1 : fd;
+  region->loaded_pages = 0;
+
+  // return the starting address of the mapped region
+  return addr;
+
 }
 
 //PAGEBREAK!

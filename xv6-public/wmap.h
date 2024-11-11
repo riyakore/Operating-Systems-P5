@@ -1,6 +1,9 @@
 // wmap's header file
 // all of these values can be changed in the future as the project progresses
 
+#ifndef WMAP_H
+#define WMAP_H
+
 // these memory locations can be changes - these values are from the hint's provided in the project description
 // Flags for wmap
 #define MAP_SHARED 0x0002
@@ -21,3 +24,7 @@ struct wmapinfo {
     int n_loaded_pages[MAX_WMMAP_INFO]; // Number of pages physically loaded into memory
 };
 
+// declared the wmap function prototype here to access it in sysproc.c
+uint wmap(uint addr, int length, int flags, int fd);
+
+#endif

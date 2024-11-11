@@ -1,3 +1,6 @@
+// so that proc.h has access to MAX_WMMAP_INFO constant value
+#include "wmap.h"
+
 // Per-CPU state
 struct cpu {
   uchar apicid;                // Local APIC ID
@@ -34,6 +37,15 @@ struct context {
 
 enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 
+// added this memory mapping structure to keep track of pages in the memory mapping
+struct mmap_region {
+  uint start_addr;       // Starting virtual address of the mapping
+  int length;            // Length of the mapped region (in bytes)
+  int flags;             // Flags (e.g., MAP_SHARED, MAP_ANONYMOUS, etc.)
+  int fd;                // File descriptor if file-backed, -1 if anonymous
+  int loaded_pages;      // Number of pages physically allocated (lazy allocation)
+};
+
 // Per-process state
 struct proc {
   uint sz;                     // Size of process memory (bytes)
@@ -49,6 +61,10 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
+
+  // memory mapped regions
+  struct mmap_region mmaps[MAX_WMMAP_INFO];    // Array to store memory-mapped regions
+  int num_mmaps;                               // Number of active memory-mapped regions
 };
 
 // Process memory is laid out contiguously, low addresses first:

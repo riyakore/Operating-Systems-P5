@@ -6,6 +6,7 @@
 #include "memlayout.h"
 #include "mmu.h"
 #include "proc.h"
+#include "wmap.h"
 
 int
 sys_fork(void)
@@ -91,3 +92,35 @@ sys_uptime(void)
 }
 
 // insert the wmap and wunmap system calls here, include the wmap and wunmap files in the definitions and includes
+int
+sys_wmap(void)
+{
+  uint addr;
+  int length;
+  int flags;
+  int fd;
+
+  // fetch the arguments for the wmap system call
+  // if the address provided is invalid
+  if (argint(0, (int*)&addr) < 0){
+    return -1;
+  }
+
+  // if the length is less than 0, invalid length
+  if (argint(1, &length) < 0){
+    return -1;
+  }
+
+  // if the flags provided are invalid
+  if (argint(2, &flags) < 0){
+    return -1;
+  }
+
+  // if the file descriptors provided are invalid
+  if (argint(3, &fd) < 0){
+    return -1;
+  }
+
+  return wmap(addr, length, flags, fd);
+}
+

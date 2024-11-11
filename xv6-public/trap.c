@@ -83,12 +83,69 @@ trap(struct trapframe *tf)
   // but when you try to access the memory, this case will generate a page fault
   // this page fault will be handled by the kernel
   case T_PGFLT:
+    
+    // get the address that caused the page fault
+    uint fault_addr = rcr2();
+    struct proc *p = myproc();
+    int i;
+
     // if page fault address is part of the mapping i.e. lazy allocation
-	  // handle it
+    // iterate through all memory mapped regions to check if fault_addr is within a mapped region
+    for (i = 0; i < p->num_mmaps; i++){
+      struct mmap_region *region = &p->mmaps[i];
+      
+      // check if the fault_addr falls within the region
+      if (fault_addr >= region->start_addr && fault_addr < region->start_addr + region->length){
+        char *mem = kalloc();
+        if (!mem) {
+          cprintf("Lazy allocation failed: out of memory\n");
+          // kill the process
+          p->killed = 1;
+          break;
+        }
+
+        // zero out the allocated pages
+        memset(mem, 0, PGSIZE);
+
+        // get the page directory and page table entries
+        pde_t *pde = &p->pgdir[PDX(fault_addr)];
+        pte_t *pgtab;
+
+        if (*pde & PTE_P){
+          pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
+        }
+        else {
+          // allocate the page table if it doesnt exist
+          if ((pgtab = (pte_t*)kalloc()) == 0){
+            cprintf("Lazy allocation failed: page table alloc failed\n");
+            kfree(mem);
+            p->killed = 1;
+            break;
+          }
+          
+          memset(pgtab, 0, PGSIZE);
+          *pde = V2P(pgtab) | PTE_P | PTE_W | PTE_U;
+        }
+
+        pte_t *pte = &pgtab[PTX(fault_addr)];
+        *pte = V2P(mem) | PTE_P | PTE_W | PTE_U;
+
+        region->loaded_pages++;
+        break;
+
+      }
+    }
+
     // else:
       // cprintf("Segmentation Fault\n");
       // kill the process
-
+    if (i == p->num_mmaps){
+      cprintf("Segmentation Fault\n");
+      p->killed = 1;
+    }
+    
+    break;
+ 
   //PAGEBREAK: 13
   default:
     if(myproc() == 0 || (tf->cs&3) == 0){
