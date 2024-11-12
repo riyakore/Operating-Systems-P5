@@ -105,6 +105,7 @@ extern int sys_write(void);
 extern int sys_uptime(void);
 // insert more system calls here
 extern int sys_wmap(void);
+extern int sys_wunmap(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -130,6 +131,7 @@ static int (*syscalls[])(void) = {
 [SYS_close]   sys_close,
 // also insert more system calls here
 [SYS_wmap]    sys_wmap,
+[SYS_wunmap]  sys_wunmap,
 };
 
 void

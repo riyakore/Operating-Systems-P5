@@ -22,3 +22,5 @@
 #define SYS_close  21
 // insert system calls here
 #define SYS_wmap   22
+#define SYS_wunmap 23
+

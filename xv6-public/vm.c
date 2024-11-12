@@ -424,6 +424,75 @@ wmap(uint addr, int length, int flags, int fd)
 
 }
 
+// added the wunmap implementation
+int 
+wunmap(uint addr)
+{
+
+  if (addr % PGSIZE != 0){
+    return FAILED;
+  }
+
+  struct proc *p = myproc();
+  struct mmap_region *region = 0;
+  int i;
+
+  // locate the memory address starting at addr
+  for (i = 0; i < p->num_mmaps; i++){
+    if (p->mmaps[i].start_addr == addr){
+      region = &p->mmaps[i];
+      break;
+    }
+  }
+
+  // return an error if no matching is found
+  if (!region){
+    return FAILED;
+  }
+
+  // calculate the number of pages to unmap
+  int num_pages = PGROUNDUP(region->length) / PGSIZE;
+  char *va = (char *)region->start_addr;
+
+  // apply the unmapping to each page
+  for (int j = 0; j < num_pages; j++, va += PGSIZE){
+    pte_t *pte = walkpgdir(p->pgdir, va, 0);
+    
+    // first check if the page is mapped
+    if (pte && (*pte & PTE_P)){
+      uint pa = PTE_ADDR(*pte);
+      
+      // if the mapping is MAP_SHARED, then write data back to file
+      if ((region->flags & MAP_SHARED) && region->fd >= 0){
+        struct file *f = p->ofile[region->fd];
+        if (f){
+          uint offset = j * PGSIZE;
+          filewrite(f, va + offset, PGSIZE);
+        }
+      }
+
+      // free the physical page and clear the page table entry
+      char *page = P2V(pa);
+      kfree(page);
+      *pte = 0;
+
+    }
+  }
+
+  // shift entries in the mmap array to fill in the gaps
+  for (int k = i; k < p->num_mmaps - 1; k++){
+    p->mmaps[k] = p->mmaps[k + 1];
+  }
+
+  // decrement the mmap counter
+  p->num_mmaps--;
+
+  // if you have reached this step, then it means success!
+  return SUCCESS;
+  
+}
+
+
 //PAGEBREAK!
 // Blank page.
 //PAGEBREAK!

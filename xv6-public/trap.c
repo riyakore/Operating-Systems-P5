@@ -97,7 +97,7 @@ trap(struct trapframe *tf)
       // check if the fault_addr falls within the region
       if (fault_addr >= region->start_addr && fault_addr < region->start_addr + region->length){
         char *mem = kalloc();
-        if (!mem) {
+        if (!mem){
           cprintf("Lazy allocation failed: out of memory\n");
           // kill the process
           p->killed = 1;
@@ -122,14 +122,17 @@ trap(struct trapframe *tf)
             p->killed = 1;
             break;
           }
-          
           memset(pgtab, 0, PGSIZE);
           *pde = V2P(pgtab) | PTE_P | PTE_W | PTE_U;
         }
 
+        // map the allocated page at the fault address
+        // PTE_W - should mark the page as writable
+        // PTE_U - should make the page as user accessible and PTE_P should mark the page as present in memory
         pte_t *pte = &pgtab[PTX(fault_addr)];
         *pte = V2P(mem) | PTE_P | PTE_W | PTE_U;
 
+        // update the loaded pages in region
         region->loaded_pages++;
         break;
 

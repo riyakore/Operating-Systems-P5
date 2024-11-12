@@ -27,4 +27,7 @@ struct wmapinfo {
 // declared the wmap function prototype here to access it in sysproc.c
 uint wmap(uint addr, int length, int flags, int fd);
 
+// declared the wunmap function prototype here to access it
+int wunmap(uint addr);
+
 #endif

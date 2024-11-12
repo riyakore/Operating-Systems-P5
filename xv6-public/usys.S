@@ -31,3 +31,5 @@ SYSCALL(sleep)
 SYSCALL(uptime)
 // added the system call here as well
 SYSCALL(wmap)
+SYSCALL(wunmap)
+

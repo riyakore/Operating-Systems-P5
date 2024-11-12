@@ -1,6 +1,6 @@
 # Operating-Systems-P5
 
-## Changes made as of now:
+## Changes made in the files for task 1 (implementing the wmap system call):
 - syscall.h
 - wmap.h
 - syscall.c
@@ -12,5 +12,19 @@
 - Makefile
 - user.h
 - usys.S
-- this kind of completes the task 1 of the project to implement the wmap() system call but I need to still make sure the test cases pass.
+### This concludes task 1
 
+## Changes made in the files for task 2 (implementing the wunmap system call):
+- sysproc.c
+- syscall.h
+- syscall.c
+- user.h
+- usys.S
+- vm.c
+- wmap.h
+- trap.c
+- this
+### This concludes task 2
+
+## Changes made in the files for task 3:
+ 

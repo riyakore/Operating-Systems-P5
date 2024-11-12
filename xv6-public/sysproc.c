@@ -92,6 +92,7 @@ sys_uptime(void)
 }
 
 // insert the wmap and wunmap system calls here, include the wmap and wunmap files in the definitions and includes
+// this one is the wmap system call
 int
 sys_wmap(void)
 {
@@ -122,5 +123,19 @@ sys_wmap(void)
   }
 
   return wmap(addr, length, flags, fd);
+}
+
+// this one is the wunmap system call
+int
+sys_wunmap(void)
+{
+  uint addr;
+  
+  // if the address is invalid
+  if (argint(0, (int*)&addr) < 0){
+    return FAILED;
+  }
+
+  return wunmap(addr);
 }
 
