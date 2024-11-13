@@ -27,4 +27,11 @@
 ### This concludes task 2
 
 ## Changes made in the files for task 3:
- 
+- exec.c
+- vm.c
+- defs.h
+### This concludes task 3
+
+## Changes made in the files for task 4 (implementing copy-on-write):
+- proc.c
+

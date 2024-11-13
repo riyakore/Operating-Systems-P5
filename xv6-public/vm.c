@@ -195,11 +195,18 @@ inituvm(pde_t *pgdir, char *init, uint sz)
 
 // Load a program segment into pgdir.  addr must be page-aligned
 // and the pages from addr to addr+sz must already be mapped.
+// added an argument here
 int
-loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
+loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz, int flags)
 {
   uint i, pa, n;
   pte_t *pte;
+  int perm = PTE_U;
+
+  // if the write flag is set, then allow write access
+  if (flags & PTE_W){
+    perm |= PTE_W;
+  }
 
   if((uint) addr % PGSIZE != 0)
     panic("loaduvm: addr must be page aligned");
@@ -213,6 +220,9 @@ loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
       n = PGSIZE;
     if(readi(ip, P2V(pa), offset+i, n) != n)
       return -1;
+
+    // apply the permissions based on the flag provided
+    *pte = (*pte & ~PTE_W) | perm;
   }
   return 0;
 }
