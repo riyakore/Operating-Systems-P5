@@ -34,4 +34,12 @@
 
 ## Changes made in the files for task 4 (implementing copy-on-write):
 - proc.c
+- vm.c
+- trap.c
+- defs.h
+- memlayout.h
+### This concludes task 4
+
+## Changes made in the files for task 5 (implementing the va2pa system call):
+- 
 

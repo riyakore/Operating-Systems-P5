@@ -83,71 +83,115 @@ trap(struct trapframe *tf)
   // but when you try to access the memory, this case will generate a page fault
   // this page fault will be handled by the kernel
   case T_PGFLT:
+    {
     
-    // get the address that caused the page fault
-    uint fault_addr = rcr2();
-    struct proc *p = myproc();
-    int i;
+      // get the address that caused the page fault
+      uint fault_addr = rcr2();
+      struct proc *p = myproc();
 
-    // if page fault address is part of the mapping i.e. lazy allocation
-    // iterate through all memory mapped regions to check if fault_addr is within a mapped region
-    for (i = 0; i < p->num_mmaps; i++){
-      struct mmap_region *region = &p->mmaps[i];
-      
-      // check if the fault_addr falls within the region
-      if (fault_addr >= region->start_addr && fault_addr < region->start_addr + region->length){
+      // walk the page directory to locate the page table
+      pde_t *pde = &p->pgdir[PDX(fault_addr)];
+    
+      if (*pde & PTE_P){
+        pte_t *pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
+        pte_t *pte = &pgtab[PTX(fault_addr)];
+ 
+      // checks if the page is present and is read-only
+      if (*pte & PTE_COW){
+        uint pa = PTE_ADDR(*pte);
         char *mem = kalloc();
+    
         if (!mem){
-          cprintf("Lazy allocation failed: out of memory\n");
-          // kill the process
+          cprintf("trap: out of memory for copy-on-write\n");
           p->killed = 1;
           break;
         }
 
-        // zero out the allocated pages
-        memset(mem, 0, PGSIZE);
+        // copy the contents of the original page to the new page
+        memmove(mem, (char*)P2V(pa), PGSIZE);
 
-        // get the page directory and page table entries
-        pde_t *pde = &p->pgdir[PDX(fault_addr)];
-        pte_t *pgtab;
+        // update the page table entry to point to the new page with write permissions
+        *pte = V2P(mem) | PTE_FLAGS(*pte) | PTE_W;
+        *pte &= ~PTE_COW;
+  
+        // flush the cache to ensure the changes to the page table are effective
+        lcr3(V2P(p->pgdir));
 
-        if (*pde & PTE_P){
-          pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
+        // decrement the reference count of the original page
+        decr_ref_count(pa / PGSIZE);
+        if (get_ref_count(pa / PGSIZE) == 0){
+          kfree((char*)P2V(pa));
         }
-        else {
-          // allocate the page table if it doesnt exist
-          if ((pgtab = (pte_t*)kalloc()) == 0){
-            cprintf("Lazy allocation failed: page table alloc failed\n");
-            kfree(mem);
-            p->killed = 1;
+      }
+
+      else if ((*pte & PTE_P) && !(*pte & PTE_W)){
+        cprintf("Segmentation Fault\n");
+        p->killed = 1;
+      }
+
+      else {
+      
+        int i; 
+     
+        for (i = 0; i < p->num_mmaps; i++){
+          struct mmap_region *region = &p->mmaps[i];
+      
+          // check if the fault_addr falls within the region
+          if (fault_addr >= region->start_addr && fault_addr < region->start_addr + region->length){
+            char *mem = kalloc();
+            if (!mem){
+              cprintf("Lazy allocation failed: out of memory\n");
+              // kill the process
+              p->killed = 1;
+              break;
+            }
+
+            // zero out the allocated pages
+            memset(mem, 0, PGSIZE);
+
+            // get the page directory and page table entries
+            pde_t *pde = &p->pgdir[PDX(fault_addr)];
+            pte_t *pgtab;
+
+            if (*pde & PTE_P){
+              pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
+            }
+            else {
+              // allocate the page table if it doesnt exist
+              if ((pgtab = (pte_t*)kalloc()) == 0){
+                cprintf("Lazy allocation failed: page table alloc failed\n");
+                kfree(mem);
+                p->killed = 1;
+                break;
+              }
+              memset(pgtab, 0, PGSIZE);
+              *pde = V2P(pgtab) | PTE_P | PTE_W | PTE_U;
+            }
+
+            // map the allocated page at the fault address
+            // PTE_W - should mark the page as writable
+            // PTE_U - should make the page as user accessible and PTE_P should mark the page as present in memory
+            pte_t *pte = &pgtab[PTX(fault_addr)];
+            *pte = V2P(mem) | PTE_P | PTE_W | PTE_U;
+
+            // update the loaded pages in region
+            region->loaded_pages++;
             break;
           }
-          memset(pgtab, 0, PGSIZE);
-          *pde = V2P(pgtab) | PTE_P | PTE_W | PTE_U;
         }
 
-        // map the allocated page at the fault address
-        // PTE_W - should mark the page as writable
-        // PTE_U - should make the page as user accessible and PTE_P should mark the page as present in memory
-        pte_t *pte = &pgtab[PTX(fault_addr)];
-        *pte = V2P(mem) | PTE_P | PTE_W | PTE_U;
-
-        // update the loaded pages in region
-        region->loaded_pages++;
-        break;
-
+        if (i == p->num_mmaps){
+          cprintf("Segmentation Fault\n");
+          p->killed = 1;
+        }
       }
     }
-
-    // else:
-      // cprintf("Segmentation Fault\n");
-      // kill the process
-    if (i == p->num_mmaps){
+    else {
       cprintf("Segmentation Fault\n");
       p->killed = 1;
     }
-    
-    break;
+  }
+  break;
  
   //PAGEBREAK: 13
   default:

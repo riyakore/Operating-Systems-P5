@@ -265,6 +265,31 @@ exit(void)
 
   acquire(&ptable.lock);
 
+  // free all the pages used by the process, with respect to reference count
+  for (uint i = 0; i < NPDENTRIES; i++){
+    if (curproc->pgdir[i] & PTE_P){
+      pte_t *pgtab = (pte_t*)P2V(PTE_ADDR(curproc->pgdir[i]));
+      
+      // walk through each page table entry in the page table
+      for (uint j = 0; j < NPTENTRIES; j++){
+        if (pgtab[j] & PTE_P){
+          uint pa = PTE_ADDR(pgtab[j]);
+          decr_ref_count(pa / PGSIZE);
+          if (get_ref_count(pa / PGSIZE) == 0){
+            char *v = P2V(pa);
+            kfree(v);
+          }
+          pgtab[j] = 0;
+        }
+      }
+
+      kfree((char*)pgtab);
+      curproc->pgdir[i] = 0;
+    }
+  }
+
+  kfree((char*)curproc->pgdir);  
+
   // Parent might be sleeping in wait().
   wakeup1(curproc->parent);
 

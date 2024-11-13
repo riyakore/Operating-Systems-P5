@@ -8,6 +8,9 @@
 #include "elf.h"
 #include "wmap.h"
 
+#define MAX_PAGES (PHYSTOP / PGSIZE)
+static uchar ref_counts[MAX_PAGES];
+
 extern char data[];  // defined by kernel.ld
 pde_t *kpgdir;  // for use in scheduler()
 
@@ -333,16 +336,30 @@ copyuvm(pde_t *pgdir, uint sz)
 
   if((d = setupkvm()) == 0)
     return 0;
+
   for(i = 0; i < sz; i += PGSIZE){
+
     if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
       panic("copyuvm: pte should exist");
+
     if(!(*pte & PTE_P))
       panic("copyuvm: page not present");
+    
     pa = PTE_ADDR(*pte);
     flags = PTE_FLAGS(*pte);
+
+    // setting the pages read-only
+    if (flags & PTE_W){
+      flags &= ~PTE_W;
+      flags |= PTE_COW;
+      incr_ref_count(pa / PGSIZE);
+    }    
+
     if((mem = kalloc()) == 0)
       goto bad;
+
     memmove(mem, (char*)P2V(pa), PGSIZE);
+
     if(mappages(d, (void*)i, PGSIZE, V2P(mem), flags) < 0) {
       kfree(mem);
       goto bad;
@@ -500,6 +517,33 @@ wunmap(uint addr)
   // if you have reached this step, then it means success!
   return SUCCESS;
   
+}
+
+// increase the reference count for a physical page if it is accessed by multiple processes
+void incr_ref_count(uint pa){
+  int index = pa / PGSIZE;
+  if (index >= 0 && index < MAX_PAGES){
+    ref_counts[index]++;
+  }
+}
+
+// decrease the reference count for a physical page if the process is done executing or is killed
+void decr_ref_count(uint pa){
+  int index = pa / PGSIZE;
+  if (index >= 0 && index < MAX_PAGES){
+    if (ref_counts[index] > 0){
+      ref_counts[index]--;
+    }
+  }
+}
+
+// get the reference count for a physical page
+int get_ref_count(uint pa){
+  int index = pa / PGSIZE;
+  if (index >= 0 && index < MAX_PAGES){
+    return ref_counts[index];
+  }
+  return 0;
 }
 
 
