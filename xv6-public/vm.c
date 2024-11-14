@@ -520,7 +520,9 @@ wunmap(uint addr)
 }
 
 // increase the reference count for a physical page if it is accessed by multiple processes
-void incr_ref_count(uint pa){
+void 
+incr_ref_count(uint pa)
+{
   int index = pa / PGSIZE;
   if (index >= 0 && index < MAX_PAGES){
     ref_counts[index]++;
@@ -528,7 +530,9 @@ void incr_ref_count(uint pa){
 }
 
 // decrease the reference count for a physical page if the process is done executing or is killed
-void decr_ref_count(uint pa){
+void 
+decr_ref_count(uint pa)
+{
   int index = pa / PGSIZE;
   if (index >= 0 && index < MAX_PAGES){
     if (ref_counts[index] > 0){
@@ -538,7 +542,9 @@ void decr_ref_count(uint pa){
 }
 
 // get the reference count for a physical page
-int get_ref_count(uint pa){
+int 
+get_ref_count(uint pa)
+{
   int index = pa / PGSIZE;
   if (index >= 0 && index < MAX_PAGES){
     return ref_counts[index];
@@ -546,6 +552,25 @@ int get_ref_count(uint pa){
   return 0;
 }
 
+// adding the implementation of the va2pa system call
+uint 
+va2pa(uint va)
+{
+  struct proc *p = myproc();
+  pde_t *pde = &p->pgdir[PDX(va)];
+
+  if (!(*pde & PTE_P))
+    return -1;
+
+  pte_t *pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
+  pte_t *pte = &pgtab[PTX(va)];
+
+  if (!(*pte & PTE_P))
+    return -1;
+
+  uint pa = PTE_ADDR(*pte) | (va & 0xFFF);
+  return pa; 
+}
 
 //PAGEBREAK!
 // Blank page.

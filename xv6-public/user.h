@@ -27,6 +27,7 @@ int uptime(void);
 uint wmap(uint addr, int length, int flags, int fd);
 int wunmap(uint addr);
 
+
 // ulib.c
 int stat(const char*, struct stat*);
 char* strcpy(char*, const char*);
