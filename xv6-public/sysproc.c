@@ -147,6 +147,13 @@ sys_va2pa(void)
   if (argint(0, (int*)&va) < 0){
     return -1;
   }
-  return (int)va2pa(va);
+  return (uint)va2pa(va);
+}
+
+// the getwmapinfo system call
+int
+sys_getwmapinfo(void)
+{
+  int 
 }
 

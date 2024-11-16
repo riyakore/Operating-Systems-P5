@@ -36,7 +36,7 @@ seginit(void)
 // Return the address of the PTE in page table pgdir
 // that corresponds to virtual address va.  If alloc!=0,
 // create any required page table pages.
-static pte_t *
+pte_t *
 walkpgdir(pde_t *pgdir, const void *va, int alloc)
 {
   pde_t *pde;
@@ -557,20 +557,22 @@ uint
 va2pa(uint va)
 {
   struct proc *p = myproc();
-  pde_t *pde = &p->pgdir[PDX(va)];
+  pte_t *pte = walkpgdir(p->pgdir, (void *)va, 0);
 
-  if (!(*pde & PTE_P))
+  if (!pte || !(*pte & PTE_P)){
     return -1;
-
-  pte_t *pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
-  pte_t *pte = &pgtab[PTX(va)];
-
-  if (!(*pte & PTE_P))
-    return -1;
+  }
 
   uint pa = PTE_ADDR(*pte) | (va & 0xFFF);
-  return pa; 
+  return pa;
 }
+
+// adding the implementation of the wmapinfo system call
+// int
+// wmapinfo(struct wmapinfo *wminfo)
+// {
+//   return 0;
+// }
 
 //PAGEBREAK!
 // Blank page.

@@ -41,5 +41,9 @@
 ### This concludes task 4
 
 ## Changes made in the files for task 5 (implementing the va2pa system call):
+- vm.c
+- sysproc.c
+- syscall.h
+- syscall.c
 - 
 
