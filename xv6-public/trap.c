@@ -7,6 +7,10 @@
 #include "x86.h"
 #include "traps.h"
 #include "spinlock.h"
+#include "sleeplock.h"
+#include "fs.h"
+#include "file.h"
+// #include "kalloc.h"
 
 #ifndef min
 #define min(a, b) ((a) < (b) ? (a) : (b))
@@ -130,6 +134,22 @@ trap(struct trapframe *tf)
         kfree((char *)P2V(pa));
       }
 
+      // cprintf("kfree: ref_counts[%d] = %d\n", pa, ref_counts[pa]);
+
+      // acquire(&kmem.lock);
+      // // either add decrement and check if 0
+      // // or remove decrement and check if 1
+      // ref_counts[pa / PGSIZE]--;
+      // if (ref_counts[pa / PGSIZE] == 0) {
+      //   release(&kmem.lock);
+      //   kfree((char *)P2V(pa));
+      // }
+      // else {
+      //   // ref_counts[pa / PGSIZE]--;
+      //   release(&kmem.lock);
+      // }
+      // kfree((char *)P2V(pa));
+
       return;
     }
 
@@ -161,29 +181,18 @@ trap(struct trapframe *tf)
         if (region->f) {
           int file_offset = fault_addr - region->start_addr;
           int bytes_to_read = min(PGSIZE, region->length - file_offset);
-          
-          // if (!region->f) {
-          //   cprintf("Lazy allocation failed: invalid file descriptor\n");
-          //   kfree(mem);
-          //   p->killed = 1;
-          //   return;
-          // }
 
-          uint old_off = region->f->off;
-          region->f->off = file_offset;
-
-          int n = fileread(region->f, mem, bytes_to_read);
+          ilock(region->f->ip);
+          int n = readi(region->f->ip, mem, file_offset, bytes_to_read);
+          iunlock(region->f->ip);
 
           // read the file content into memory
           if (n != bytes_to_read) {
             cprintf("Lazy allocation failed: file read error\n");
             kfree(mem);
-            region->f->off = old_off;
             p->killed = 1;
             return;
           }
-
-          region->f->off = old_off;
 
         }
 

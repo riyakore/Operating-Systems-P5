@@ -7,9 +7,18 @@
 #include "proc.h"
 #include "elf.h"
 #include "wmap.h"
+#include "spinlock.h"
+#include "sleeplock.h"
+#include "fs.h"
+#include "file.h"
+// #include "kalloc.h"
 
 #define MAX_PAGES (PHYSTOP / PGSIZE)
 static uchar ref_counts[MAX_PAGES];
+
+#ifndef min
+#define min(a, b) ((a) < (b) ? (a) : (b))
+#endif
 
 extern char data[];  // defined by kernel.ld
 pde_t *kpgdir;  // for use in scheduler()
@@ -207,7 +216,8 @@ loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz, int fl
   int perm = PTE_U;
 
   // if the write flag is set, then allow write access
-  if (flags & PTE_W){
+  // might have to make changes here
+  if (flags & ELF_PROG_FLAG_WRITE){
     perm |= PTE_W;
   }
 
@@ -225,7 +235,8 @@ loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz, int fl
       return -1;
 
     // apply the permissions based on the flag provided
-    *pte = (*pte & ~PTE_W) | perm;
+    // *pte = (*pte & ~PTE_W) | perm;
+    *pte = (*pte & ~0xFFF) | perm | PTE_P;
   }
   return 0;
 }
@@ -343,7 +354,8 @@ copyuvm(pde_t *pgdir, uint sz)
       panic("copyuvm: pte should exist");
 
     if(!(*pte & PTE_P))
-      panic("copyuvm: page not present");
+      // panic("copyuvm: page not present");
+      continue;
     
     pa = PTE_ADDR(*pte);
     flags = PTE_FLAGS(*pte);
@@ -356,6 +368,10 @@ copyuvm(pde_t *pgdir, uint sz)
       flags |= PTE_COW;
     }
 
+    // acquire(&kmem.lock);
+    // ref_counts[pa / PGSIZE]++;
+    // release(&kmem.lock);
+
     incr_ref_count(pa / PGSIZE);    
 
     if((mem = kalloc()) == 0)
@@ -367,6 +383,10 @@ copyuvm(pde_t *pgdir, uint sz)
       kfree(mem);
       goto bad;
     }
+
+    // if(mappages(d, (void*)i, PGSIZE, pa, flags) < 0) {
+    //   goto bad;
+    // }
   }
 
   // flush TLB for parent
@@ -542,37 +562,47 @@ wunmap(uint addr)
 
       decr_ref_count(pa / PGSIZE);
 
+      // kfree((char *)P2V(pa));
+
       if (get_ref_count(pa / PGSIZE) == 0){
         char *page = P2V(pa);
         kfree(page);
       }
-      
-      // // if the mapping is MAP_SHARED, then write data back to file
-      // if ((region->flags & MAP_SHARED) && region->fd >= 0){
-      //   struct file *f = p->ofile[region->fd];
-      //   if (f){
-      //     uint offset = j * PGSIZE;
-      //     filewrite(f, va + offset, PGSIZE);
-      //   }
-      // }
 
       // if the mapping is MAP_SHARED, then write data back to file
       if ((region->flags & MAP_SHARED) && region->f) {
+
+        if (!region->f->ip) {
+          cprintf("wunmap: Invalid inode pointrt\n");
+          continue;
+        }
+
         struct file *f = region->f;
-        // uint file_offset = va - region->start_addr;
-        filewrite(f, va, PGSIZE);
+        // uint file_offset = (uint)va - region->start_addr;
+        uint file_offset = (uint)va - region->start_addr;
+        // filewrite(f, va, PGSIZE);
+
+        begin_op();
+        ilock(f->ip);
+        // int n = writei(f->ip, va, file_offset, PGSIZE);
+        int bytes_to_write = min(PGSIZE, region->length - file_offset);
+        int n = writei(f->ip, va, file_offset, bytes_to_write);
+        iunlock(f->ip);
+        end_op();
+
+        if (n != bytes_to_write) {
+          cprintf("wunmap: file write error\n");
+        }
       }
 
-      if (region->f) {
-        fileclose(region->f);
-      }
-
-      // free the physical page and clear the page table entry
-      char *page = P2V(pa);
-      kfree(page);
       *pte = 0;
 
     }
+  }
+
+  if (region->f) {
+    fileclose(region->f);
+    region->f = 0;
   }
 
   // shift entries in the mmap array to fill in the gaps
@@ -664,7 +694,7 @@ getwmapinfo(struct wmapinfo *winfo)
     info.n_loaded_pages[i] = loaded_pages;
   }
 
-  if (copyout(p->pgdir, (uint)&winfo, &info, sizeof(struct wmapinfo)) < 0) {
+  if (copyout(p->pgdir, (uint)winfo, &info, sizeof(struct wmapinfo)) < 0) {
     return FAILED;
   }
 

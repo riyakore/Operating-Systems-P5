@@ -249,6 +249,11 @@ exit(void)
   if(curproc == initproc)
     panic("init exiting");
 
+  for (int i = 0; i < curproc->num_mmaps; i++) {
+    wunmap(curproc->mmaps[i].start_addr);
+  }
+  curproc->num_mmaps = 0;
+
   // Close all open files.
   for(fd = 0; fd < NOFILE; fd++){
     if(curproc->ofile[fd]){
@@ -262,12 +267,23 @@ exit(void)
   end_op();
   curproc->cwd = 0;
 
-  acquire(&ptable.lock);
+  // uint a;
+  // for (a = 0; a < curproc->sz; a += PGSIZE) {
+  //   pte_t *pte = walkpgdir(curproc->pgdir, (void *)a, 0);
+  //   if (pte && (*pte & PTE_P)) {
+  //     uint pa = PTE_ADDR(*pte);
+  //     char *v = P2V(pa);
 
-  for (int i = 0; i < curproc->num_mmaps; i++) {
-    wunmap(curproc->mmaps[i].start_addr);
-  }
-  curproc->num_mmaps = 0;
+  //     kfree(v);
+  //   }
+  // }
+
+  // for (int i = 0; i < curproc->num_mmaps; i++) {
+  //   wunmap(curproc->mmaps[i].start_addr);
+  // }
+  // curproc->num_mmaps = 0;
+
+  acquire(&ptable.lock);
 
   // Parent might be sleeping in wait().
   wakeup1(curproc->parent);
