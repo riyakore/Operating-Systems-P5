@@ -225,7 +225,7 @@ loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz, int fl
       return -1;
 
     // apply the permissions based on the flag provided
-    // *pte = (*pte & ~PTE_W) | perm;
+    *pte = (*pte & ~PTE_W) | perm;
   }
   return 0;
 }
@@ -348,12 +348,15 @@ copyuvm(pde_t *pgdir, uint sz)
     pa = PTE_ADDR(*pte);
     flags = PTE_FLAGS(*pte);
 
-    // // setting the pages read-only
-    // if (flags & PTE_W){
-    //   flags &= ~PTE_W;
-    //   flags |= PTE_COW;
-    //   incr_ref_count(pa / PGSIZE);
-    // }    
+    // setting the pages read-only
+    if (flags & PTE_W){
+      *pte &= ~PTE_W;
+      *pte |= PTE_COW;
+      flags &= ~PTE_W;
+      flags |= PTE_COW;
+    }
+
+    incr_ref_count(pa / PGSIZE);    
 
     if((mem = kalloc()) == 0)
       goto bad;
@@ -365,6 +368,9 @@ copyuvm(pde_t *pgdir, uint sz)
       goto bad;
     }
   }
+
+  // flush TLB for parent
+  lcr3(V2P(pgdir));
   return d;
 
 bad:
@@ -418,7 +424,6 @@ uint
 wmap(uint addr, int length, int flags, int fd)
 {
   struct proc *p = myproc();
-  int i;
 
   // validate flags
   if (!(flags & MAP_FIXED) || !(flags & MAP_SHARED)) {
@@ -554,7 +559,7 @@ wunmap(uint addr)
       // if the mapping is MAP_SHARED, then write data back to file
       if ((region->flags & MAP_SHARED) && region->f) {
         struct file *f = region->f;
-        uint file_offset = va - region->start_addr;
+        // uint file_offset = va - region->start_addr;
         filewrite(f, va, PGSIZE);
       }
 
@@ -659,7 +664,7 @@ getwmapinfo(struct wmapinfo *winfo)
     info.n_loaded_pages[i] = loaded_pages;
   }
 
-  if (copyout(p->pgdir, (uint)wminfo, &info, sizeof(struct wmapinfo)) < 0) {
+  if (copyout(p->pgdir, (uint)&winfo, &info, sizeof(struct wmapinfo)) < 0) {
     return FAILED;
   }
 

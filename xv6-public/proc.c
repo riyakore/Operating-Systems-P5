@@ -207,14 +207,8 @@ fork(void)
   for (i = 0; i < curproc->num_mmaps; i++) {
     np->mmaps[i] = curproc->mmaps[i];
     struct mmap_region *region = &curproc->mmaps[i];
-    uint addr = region->start_addr;
-    // Increment reference counts for all pages in the mapping.
-    for (int j = 0; j < region->length / PGSIZE; j++, addr += PGSIZE) {
-      pte_t *pte = walkpgdir(curproc->pgdir, (void *)addr, 0);
-      if (pte && (*pte & PTE_P)) {
-        uint pa = PTE_ADDR(*pte);
-        incr_ref_count(pa / PGSIZE);
-      }
+    if (region->f) {
+      filedup(region->f);
     }
   }
 

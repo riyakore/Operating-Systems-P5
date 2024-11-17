@@ -7,15 +7,14 @@
 #include "x86.h"
 #include "traps.h"
 #include "spinlock.h"
-// #include "file.h"
 
 #ifndef min
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
-struct file {
-  uint off; // File offset
-};
+// struct file {
+//   uint off; // File offset
+// };
 
 // Interrupt descriptor table (shared by all CPUs).
 struct gatedesc idt[256];
@@ -94,7 +93,6 @@ trap(struct trapframe *tf)
     // get the faulting virtual address
     uint fault_addr = rcr2();
     struct proc *p = myproc();
-    int handled = 0;
 
     // check if the process exists
     if (!p){
@@ -164,12 +162,12 @@ trap(struct trapframe *tf)
           int file_offset = fault_addr - region->start_addr;
           int bytes_to_read = min(PGSIZE, region->length - file_offset);
           
-          if (!f) {
-            cprintf("Lazy allocation failed: invalid file descriptor\n");
-            kfree(mem);
-            p->killed = 1;
-            return;
-          }
+          // if (!region->f) {
+          //   cprintf("Lazy allocation failed: invalid file descriptor\n");
+          //   kfree(mem);
+          //   p->killed = 1;
+          //   return;
+          // }
 
           uint old_off = region->f->off;
           region->f->off = file_offset;
