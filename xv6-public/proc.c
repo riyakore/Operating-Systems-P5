@@ -203,31 +203,58 @@ fork(void)
   *np->tf = *curproc->tf;
 
   // copy memory mappings from parent to child
-  np->num_mmaps = curproc->num_mmaps;
-  for (i = 0; i < curproc->num_mmaps; i++) {
+  // np->num_mmaps = curproc->num_mmaps;
+  // for (i = 0; i < curproc->num_mmaps; i++) {
 
-    // NEW ADDED THIS IN FORK
-    struct mmap_region *parent_region = &curproc->mmaps[i];
-    struct mmap_region *child_region = &np->mmaps[i];
+  //   // NEW ADDED THIS IN FORK
+  //   struct mmap_region *parent_region = &curproc->mmaps[i];
+  //   struct mmap_region *child_region = &np->mmaps[i];
 
-    // copying all of it
-    *child_region = *parent_region;
+  //   // copying all of it
+  //   *child_region = *parent_region;
 
-    for (uint va = parent_region->start_addr; va < parent_region->start_addr + parent_region->length; va += PGSIZE) {
-      pte_t *pte = walkpgdir(curproc->pgdir, (void *)va, 0);
-      if (pte && (*pte & PTE_P)) {
-        uint pa = PTE_ADDR(*pte);
-        // adding the same page table from the parent to the child so that they share the same physical pages
-        mapthepages(np->pgdir, (void*)va, PGSIZE, pa, PTE_FLAGS(*pte));
-        incr_ref_count(pa / PGSIZE);
-      }
+  //   for (uint va = parent_region->start_addr; va < parent_region->start_addr + parent_region->length; va += PGSIZE) {
+  //     pte_t *pte = walkpgdir(curproc->pgdir, (void *)va, 0);
+  //     if (pte && (*pte & PTE_P)) {
+  //       uint pa = PTE_ADDR(*pte);
+  //       // adding the same page table from the parent to the child so that they share the same physical pages
+  //       mapthepages(np->pgdir, (void*)va, PGSIZE, pa, PTE_FLAGS(*pte));
+  //       incr_ref_count(pa / PGSIZE);
+  //     }
+  //   }
+
+  //   if (parent_region->f) {
+  //     filedup(parent_region->f);
+  //   }
+  //   // TILL HERE
+  // }
+
+  // added this
+
+  acquire(&ptable.lock);
+  for(i = 0; i < curproc->sz; i += PGSIZE) {
+    pte_t *pte = walkpgdir(curproc->pgdir, (void *) i, 0);
+    if(!pte) {
+      continue;
     }
 
-    if (parent_region->f) {
-      filedup(parent_region->f);
+    if(!(*pte & PTE_P)) {
+      continue;
     }
-    // TILL HERE
+
+    // uint pa = PTE_ADDR(*pte);
+    uint flags = PTE_FLAGS(*pte);
+
+    if(flags & PTE_W) {
+      *pte &= ~PTE_W;
+      *pte |= PTE_COW;
+    }
   }
+
+  lcr3(V2P(curproc->pgdir));
+  release(&ptable.lock);
+
+  // till here
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;

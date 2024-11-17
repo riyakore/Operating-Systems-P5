@@ -317,8 +317,15 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
       pa = PTE_ADDR(*pte);
       if(pa == 0)
         panic("kfree");
-      char *v = P2V(pa);
-      kfree(v);
+      // // added this
+      // decr_ref_count(pa / PGSIZE);
+      // if (get_ref_count(pa / PGSIZE) == 0) {
+      //   char *v = P2V(pa);
+      //   kfree(v);
+      // }
+      // // char *v = P2V(pa);
+      // // kfree(v);
+      // // till here
       *pte = 0;
     }
   }
@@ -365,7 +372,8 @@ copyuvm(pde_t *pgdir, uint sz)
   pde_t *d;
   pte_t *pte;
   uint pa, i, flags;
-  char *mem;
+  // char *mem;
+  // struct proc *p = myproc();
 
   if((d = setupkvm()) == 0)
     return 0;
@@ -373,7 +381,8 @@ copyuvm(pde_t *pgdir, uint sz)
   for(i = 0; i < sz; i += PGSIZE){
 
     if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
-      panic("copyuvm: pte should exist");
+      // panic("copyuvm: pte should exist");
+      continue;
 
     if(!(*pte & PTE_P))
       // panic("copyuvm: page not present");
@@ -382,30 +391,66 @@ copyuvm(pde_t *pgdir, uint sz)
     pa = PTE_ADDR(*pte);
     flags = PTE_FLAGS(*pte);
 
+    // skip the init process and dont implement COW on it
+    // if (parent->pid == 1) {
+    //   // for inital process, allocate new pages
+    //   if((mem = kalloc()) == 0) {
+    //     goto bad;
+    //   }
+    //   memmove(mem, (char*)P2V(pa), PGSIZE);
+    //   if(mappages(d, (void*)i, PGSIZE, V2P(mem), flags) < 0) {
+    //     kfree(mem);
+    //     goto bad;
+    //   }
+    //   continue;
+    // }
+
+    // mapping the same physical pages from parent to child
+    // if(mappages(d, (void*)i, PGSIZE, pa, flags) < 0) {
+    //   goto bad;
+    // }
+
     // setting the pages read-only
     if (flags & PTE_W){
-      *pte &= ~PTE_W;
-      *pte |= PTE_COW;
+      // updating the parent's page table entry
+      // *pte &= ~PTE_W;
+      // *pte |= PTE_COW;
+
+      // added this
+      // pte_t *child_pte = walkpgdir(d, (void *) i, 0);
+      // if(!child_pte) {
+      //   panic("copyuvm: child_pte should exist");
+      // }
+      // updating the child's page table entry
       flags &= ~PTE_W;
       flags |= PTE_COW;
+
+      // *child_pte &= ~PTE_W;
+      // *child_pte |= PTE_COW;
+    }
+
+    if(mappages(d, (void*)i, PGSIZE, pa, flags) < 0) {
+      goto bad;
     }
 
     incr_ref_count(pa / PGSIZE);    
 
     // copy existing parent's mapping rather than allocating new pages - make this change
-    if((mem = kalloc()) == 0)
-      goto bad;
+    // the code i have commented out defeats the purpose of COW
+    // if((mem = kalloc()) == 0)
+    //   goto bad;
 
-    memmove(mem, (char*)P2V(pa), PGSIZE);
+    // memmove(mem, (char*)P2V(pa), PGSIZE);
 
-    if(mappages(d, (void*)i, PGSIZE, V2P(mem), flags) < 0) {
-      kfree(mem);
-      goto bad;
-    }
+    // if(mappages(d, (void*)i, PGSIZE, V2P(mem), flags) < 0) {
+    //   kfree(mem);
+    //   goto bad;
+    // }
+
   }
 
   // flush TLB for parent
-  lcr3(V2P(pgdir));
+  // lcr3(V2P(pgdir));
   return d;
 
 bad:

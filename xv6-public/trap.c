@@ -103,7 +103,9 @@ trap(struct trapframe *tf)
     pte_t *pte = walkpgdir(p->pgdir, (void *)fault_addr, 0);
 
     // if the page is marked copy on write
-    if (pte && (*pte & PTE_COW)) {
+    // changed the start of the if statement
+    if (pte && (*pte & PTE_P) && (*pte & PTE_COW)) {
+    // if (pte && (*pte & PTE_COW)) {
       uint pa = PTE_ADDR(*pte);
       char *mem = kalloc();
 
@@ -116,18 +118,28 @@ trap(struct trapframe *tf)
       // if the child wants to write, then copy the contents of the og page to the new page
       memmove(mem, (char *)P2V(pa), PGSIZE);
 
+      // update page table entry to point to the new page with write permissions
+      // uint flags = PTE_FLAGS(*pte);
+      // flags &= ~PTE_COW;
+      // flags |= PTE_W;
+
       // update the page table entry to point to the new page with write permissions
-      *pte = V2P(mem) | PTE_FLAGS(*pte) | PTE_W;
-      *pte &= ~PTE_COW;
+      // *pte = V2P(mem) | PTE_FLAGS(*pte) | PTE_W;
+      // *pte &= ~PTE_COW;
+
+      *pte = V2P(mem) | PTE_P | PTE_W | PTE_U;
 
       // flush the TLB to ensure changes to the page table are effectice
-      lcr3(V2P(p->pgdir));
+      // lcr3(V2P(p->pgdir));
 
       // decrement the reference count of the original page
       decr_ref_count(pa / PGSIZE);
       if (get_ref_count(pa / PGSIZE) == 0) {
         kfree((char *)P2V(pa));
       }
+
+      // moved it down
+      lcr3(V2P(p->pgdir));
 
       return;
     }
