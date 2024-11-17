@@ -33,5 +33,5 @@ SYSCALL(uptime)
 SYSCALL(wmap)
 SYSCALL(wunmap)
 SYSCALL(va2pa)
-SYSCALL(wmapinfo)
+SYSCALL(getwmapinfo)
 

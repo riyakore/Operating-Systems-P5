@@ -20,6 +20,8 @@ extern void trapret(void);
 
 static void wakeup1(void *chan);
 
+pte_t *walkpgdir(pde_t *pgdir, const void *va, int alloc);
+
 void
 pinit(void)
 {
@@ -184,19 +186,6 @@ fork(void)
   struct proc *np;
   struct proc *curproc = myproc();
 
-  // somewhere in this function, add copy on write when creating the child process
-  // so you need to use the set of same physical pages for the child process
-  // you need to also check that no one writes to this shared memory between the parent and the child
-  // also implement a mechanism or a system call if a write is issued to those shared pages in memory
-  // basically, call the page fault handler in trap.c to handle writes to these pages
-  // here in the fork function, you just mark everything as read-only in both child and parent page tables.
-  // if a write is issued, then call the page fault handler and duplicate the page
-  // define an integer called reference_count - this keeps track of how many processes reference to that page in physical memory
-  // you can increment and decrement this reference_count to keep track of the child and parent processes referencing this page
-  // use a static array to keep track of the reference count for each page
-  // assume max number of processes sharing a page wont be more than 256 - so reference count can fit in 1 byte
-  // after this, also implement lazy allocation to that the page table of the parent with all the mappings will be duplicated for the child process
-  
   // Allocate process.
   if((np = allocproc()) == 0){
     return -1;
@@ -212,6 +201,22 @@ fork(void)
   np->sz = curproc->sz;
   np->parent = curproc;
   *np->tf = *curproc->tf;
+
+  // copy memory mappings from parent to child
+  np->num_mmaps = curproc->num_mmaps;
+  for (i = 0; i < curproc->num_mmaps; i++) {
+    np->mmaps[i] = curproc->mmaps[i];
+    struct mmap_region *region = &curproc->mmaps[i];
+    uint addr = region->start_addr;
+    // Increment reference counts for all pages in the mapping.
+    for (int j = 0; j < region->length / PGSIZE; j++, addr += PGSIZE) {
+      pte_t *pte = walkpgdir(curproc->pgdir, (void *)addr, 0);
+      if (pte && (*pte & PTE_P)) {
+        uint pa = PTE_ADDR(*pte);
+        incr_ref_count(pa / PGSIZE);
+      }
+    }
+  }
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
@@ -265,30 +270,10 @@ exit(void)
 
   acquire(&ptable.lock);
 
-  // free all the pages used by the process, with respect to reference count
-  for (uint i = 0; i < NPDENTRIES; i++){
-    if (curproc->pgdir[i] & PTE_P){
-      pte_t *pgtab = (pte_t*)P2V(PTE_ADDR(curproc->pgdir[i]));
-      
-      // walk through each page table entry in the page table
-      for (uint j = 0; j < NPTENTRIES; j++){
-        if (pgtab[j] & PTE_P){
-          uint pa = PTE_ADDR(pgtab[j]);
-          decr_ref_count(pa / PGSIZE);
-          if (get_ref_count(pa / PGSIZE) == 0){
-            char *v = P2V(pa);
-            kfree(v);
-          }
-          pgtab[j] = 0;
-        }
-      }
-
-      kfree((char*)pgtab);
-      curproc->pgdir[i] = 0;
-    }
+  for (int i = 0; i < curproc->num_mmaps; i++) {
+    wunmap(curproc->mmaps[i].start_addr);
   }
-
-  kfree((char*)curproc->pgdir);  
+  curproc->num_mmaps = 0;
 
   // Parent might be sleeping in wait().
   wakeup1(curproc->parent);

@@ -36,7 +36,7 @@ seginit(void)
 // Return the address of the PTE in page table pgdir
 // that corresponds to virtual address va.  If alloc!=0,
 // create any required page table pages.
-pte_t *
+pte_t*
 walkpgdir(pde_t *pgdir, const void *va, int alloc)
 {
   pde_t *pde;
@@ -225,7 +225,7 @@ loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz, int fl
       return -1;
 
     // apply the permissions based on the flag provided
-    *pte = (*pte & ~PTE_W) | perm;
+    // *pte = (*pte & ~PTE_W) | perm;
   }
   return 0;
 }
@@ -348,12 +348,12 @@ copyuvm(pde_t *pgdir, uint sz)
     pa = PTE_ADDR(*pte);
     flags = PTE_FLAGS(*pte);
 
-    // setting the pages read-only
-    if (flags & PTE_W){
-      flags &= ~PTE_W;
-      flags |= PTE_COW;
-      incr_ref_count(pa / PGSIZE);
-    }    
+    // // setting the pages read-only
+    // if (flags & PTE_W){
+    //   flags &= ~PTE_W;
+    //   flags |= PTE_COW;
+    //   incr_ref_count(pa / PGSIZE);
+    // }    
 
     if((mem = kalloc()) == 0)
       goto bad;
@@ -418,19 +418,25 @@ uint
 wmap(uint addr, int length, int flags, int fd)
 {
   struct proc *p = myproc();
+  int i;
+
+  // validate flags
+  if (!(flags & MAP_FIXED) || !(flags & MAP_SHARED)) {
+    return FAILED;
+  }
 
   // check for valid length
   if (length <= 0){
     return FAILED;
   }
 
-  // check for required flags
-  if (!(flags & MAP_FIXED) || !(flags & MAP_SHARED)){
+  // check if the address is a multiple of the page size
+  if ((addr % PGSIZE) != 0) {
     return FAILED;
   }
 
-  // check for address validity if the MAP_FIXED is specified
-  if (addr < 0x60000000 || addr >= 0x80000000 || addr % PGSIZE != 0){
+  // check for address validity - if it is in the limits
+  if (addr < 0x60000000 || addr + length > 0x80000000) {
     return FAILED;
   }
 
@@ -439,12 +445,52 @@ wmap(uint addr, int length, int flags, int fd)
     return FAILED;
   }
 
+  // added the overlapping mappings check here to make sure if we attempt to
+  // place a new mapping that overlaps with the existing mapping, when it will fail
+  for (int i = 0; i < p->num_mmaps; i++){
+    struct mmap_region *existing = &p->mmaps[i];
+    uint existing_start = existing->start_addr;
+    uint existing_end = existing_start + PGROUNDUP(existing->length);
+
+    uint new_end = addr + PGROUNDUP(length);
+
+    if (!(new_end <= existing_start || addr >= existing_end)){
+      return FAILED;
+    }
+  }
+
   struct mmap_region *region = &p->mmaps[p->num_mmaps++];
   region->start_addr = addr;
   region->length = length;
+
+  // to handle file backed mapping
+  if (!(flags & MAP_ANONYMOUS)) {
+    if (fd < 0 || fd >= NOFILE) {
+      return FAILED;
+    }
+
+    struct file *f = p->ofile[fd];
+
+    if (!f) {
+      return FAILED;
+    }
+
+    filedup(f);
+
+    region->f = f;
+  }
+
+  else {
+    // anonymous mapping
+    region->f = 0;
+  }
+
   region->flags = flags;
-  region->fd = (flags & MAP_ANONYMOUS) ? -1 : fd;
+  region->fd = fd;
   region->loaded_pages = 0;
+
+  // to ensure lazy allocation, no physical pages are allocated here.
+  // they will be allocated in trap.c when there is a page fault
 
   // return the starting address of the mapped region
   return addr;
@@ -488,14 +534,32 @@ wunmap(uint addr)
     // first check if the page is mapped
     if (pte && (*pte & PTE_P)){
       uint pa = PTE_ADDR(*pte);
+
+      decr_ref_count(pa / PGSIZE);
+
+      if (get_ref_count(pa / PGSIZE) == 0){
+        char *page = P2V(pa);
+        kfree(page);
+      }
       
+      // // if the mapping is MAP_SHARED, then write data back to file
+      // if ((region->flags & MAP_SHARED) && region->fd >= 0){
+      //   struct file *f = p->ofile[region->fd];
+      //   if (f){
+      //     uint offset = j * PGSIZE;
+      //     filewrite(f, va + offset, PGSIZE);
+      //   }
+      // }
+
       // if the mapping is MAP_SHARED, then write data back to file
-      if ((region->flags & MAP_SHARED) && region->fd >= 0){
-        struct file *f = p->ofile[region->fd];
-        if (f){
-          uint offset = j * PGSIZE;
-          filewrite(f, va + offset, PGSIZE);
-        }
+      if ((region->flags & MAP_SHARED) && region->f) {
+        struct file *f = region->f;
+        uint file_offset = va - region->start_addr;
+        filewrite(f, va, PGSIZE);
+      }
+
+      if (region->f) {
+        fileclose(region->f);
       }
 
       // free the physical page and clear the page table entry
@@ -567,12 +631,40 @@ va2pa(uint va)
   return pa;
 }
 
-// adding the implementation of the wmapinfo system call
-// int
-// wmapinfo(struct wmapinfo *wminfo)
-// {
-//   return 0;
-// }
+// adding the implementation of the getwmapinfo system call
+int
+getwmapinfo(struct wmapinfo *winfo)
+{
+  struct proc *p = myproc();
+  struct wmapinfo info;
+  int i;
+
+  info.total_mmaps = p->num_mmaps;
+
+  for (i = 0; i < p->num_mmaps && i < MAX_WMMAP_INFO; i++) {
+    struct mmap_region *region = &p->mmaps[i];
+    info.addr[i] = region->start_addr;
+    info.length[i] = region->length;
+
+    // count the number of loaded pages
+    int loaded_pages = 0;
+
+    for (uint va = region->start_addr; va < region->start_addr + region->length; va += PGSIZE) {
+      pte_t *pte = walkpgdir(p->pgdir, (void*)va, 0);
+      if (pte && (*pte & PTE_P)) {
+        loaded_pages++;
+      }
+    }
+
+    info.n_loaded_pages[i] = loaded_pages;
+  }
+
+  if (copyout(p->pgdir, (uint)wminfo, &info, sizeof(struct wmapinfo)) < 0) {
+    return FAILED;
+  }
+
+  return SUCCESS;
+}
 
 //PAGEBREAK!
 // Blank page.

@@ -150,10 +150,55 @@ sys_va2pa(void)
   return (uint)va2pa(va);
 }
 
-// the getwmapinfo system call
+// the getwmapinfo system call - new
 int
 sys_getwmapinfo(void)
 {
-  int 
+  struct wmapinfo *uwminfo;
+  struct wmapinfo kwminfo;
+  struct proc *curproc = myproc();
+
+  if (argptr(0, (void*)&uwminfo, sizeof(*uwminfo)) < 0){
+    return FAILED;
+  }
+
+  kwminfo.total_mmaps = curproc->num_mmaps;
+  for (int i = 0; i < kwminfo.total_mmaps; i++) {
+    struct mmap_region *region = &curproc->mmaps[i];
+    kwminfo.addr[i] = region->start_addr;
+    kwminfo.length[i] = region->length;
+    kwminfo.n_loaded_pages[i] = region->loaded_pages;
+  }
+
+  if (copyout(curproc->pgdir, (uint)uwminfo, &kwminfo, sizeof(kwminfo)) < 0) {
+    return FAILED;
+  }
+
+  return SUCCESS;
 }
+
+// the getwmapinfo system call - old
+// int
+// sys_getwmapinfo(void)
+// {
+//   struct wmapinfo *wminfo;
+
+//   if (argptr(0, (char **)&wminfo, sizeof(*wminfo)) < 0){
+//     return FAILED;
+//   }
+
+//   struct proc *curproc = myproc();
+//   int total_mmaps = curproc->num_mmaps;
+
+//   // this will populate the struct
+//   wminfo->total_mmaps = total_mmaps;
+//   for (int i = 0; i < total_mmaps; i++){
+//     struct mmap_region *region = &curproc->mmaps[i];
+//     wminfo->addr[i] = region->start_addr;
+//     wminfo->length[i] = region->length;
+//     wminfo->n_loaded_pages[i] = region->loaded_pages;
+//   }
+
+//   return SUCCESS;
+// }
 

@@ -1,3 +1,6 @@
+#ifndef PROC_H
+#define PROC_H
+
 // so that proc.h has access to MAX_WMMAP_INFO constant value
 #include "wmap.h"
 
@@ -43,6 +46,7 @@ struct mmap_region {
   int length;            // Length of the mapped region (in bytes)
   int flags;             // Flags (e.g., MAP_SHARED, MAP_ANONYMOUS, etc.)
   int fd;                // File descriptor if file-backed, -1 if anonymous
+  struct file *f;        // Pointer to the file struct if file-backed
   int loaded_pages;      // Number of pages physically allocated (lazy allocation)
 };
 
@@ -72,3 +76,5 @@ struct proc {
 //   original data and bss
 //   fixed-size stack
 //   expandable heap
+
+#endif // PROC_H
