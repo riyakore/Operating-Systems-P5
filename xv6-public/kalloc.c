@@ -9,10 +9,6 @@
 #include "mmu.h"
 #include "spinlock.h"
 
-// added this
-// #define MAX_PAGES (PHYSTOP / PGSIZE)
-// uchar ref_counts[MAX_PAGES];
-
 void freerange(void *vstart, void *vend);
 extern char end[]; // first address after kernel loaded from ELF file
                    // defined by the kernel linker script in kernel.ld
@@ -37,11 +33,6 @@ kinit1(void *vstart, void *vend)
 {
   initlock(&kmem.lock, "kmem");
   kmem.use_lock = 0;
-
-  // reference counts array is initialized here
-  // for (int i = 0; i < MAX_PAGES; i++) {
-  //   ref_counts[i] = 0;
-  // }
 
   freerange(vstart, vend);
 }
@@ -75,38 +66,6 @@ kfree(char *v)
   if((uint)v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
     panic("kfree");
 
-  // added this
-  // uint pa = V2P(v) / PGSIZE;
-  // if (pa >= MAX_PAGES) {
-  //   panic("kfree: invalid physical address");
-  // }
-
-  // acquire(&kmem.lock);
-  // if (ref_counts[pa] <= 0) {
-  //   release(&kmem.lock);
-  //   panic("kfree: ref_counts underflow or double free");
-  // }
-
-  // ref_counts[pa]--;
-  // if (ref_counts[pa] > 0) {
-  //   release(&kmem.lock);
-  //   return;
-  // }
-  // release(&kmem.lock);
-  // else {
-  //   release(&kmem.lock);
-  //   return;
-  // }
-
-  // if (ref_counts[pa] <= 0) {
-  //   panic("kfree: ref_counts underflow or double free");
-  // }
-  
-  // if (--ref_counts[pa] > 0) {
-  //   return;
-  // }
-  // till here
-
   // Fill with junk to catch dangling refs.
   memset(v, 1, PGSIZE);
 
@@ -134,25 +93,6 @@ kalloc(void)
     kmem.freelist = r->next;
   if(kmem.use_lock)
     release(&kmem.lock);
-
-  // added this
-  // if (r) {
-  //   uint pa = V2P((char*)r) / PGSIZE;
-  //   if (pa >= MAX_PAGES) {
-  //     panic("kalloc: invalid physical address");
-  //   }
-
-  //   acquire(&kmem.lock);
-  //   ref_counts[pa] = 1;
-  //   release(&kmem.lock);
-    
-  //   // if (ref_counts[pa] != 0) {
-  //   //   panic("kalloc: ref_counts not zero for free page");
-  //   // }
-
-  //   // ref_counts[pa]++;
-  // }
-  // till here
 
   return (char*)r;
 }

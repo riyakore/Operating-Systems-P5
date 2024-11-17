@@ -173,8 +173,6 @@ void            uartputc(int);
 
 // vm.c
 void            seginit(void);
-// pte_t*          walkpgdir(pde_t *pgdir, const void *va, int alloc);
-// pte_t*          walkpgdir(pde_t*, const void *va, int);
 void            kvmalloc(void);
 pde_t*          setupkvm(void);
 char*           uva2ka(pde_t*, char*);
@@ -187,9 +185,7 @@ pde_t*          copyuvm(pde_t*, uint);
 void            switchuvm(struct proc*);
 void            switchkvm(void);
 int             copyout(pde_t*, uint, void*, uint);
-// void            clearpteu(pde_t *pgdir, char *uva);
 void            clearpteu(pde_t*, char*);
-// uint            wmap(uint addr, int length, int flags, int fd);
 uint            wmap(uint, int, int, int);
 int             wunmap(uint);
 void            incr_ref_count(uint);
@@ -197,6 +193,7 @@ void            decr_ref_count(uint);
 int             get_ref_count(uint);
 uint            va2pa(uint);
 int             getwmapinfo(struct wmapinfo*);
+int             mapthepages(pde_t*, void*, uint, uint, int);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))

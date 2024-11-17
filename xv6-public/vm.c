@@ -11,7 +11,6 @@
 #include "sleeplock.h"
 #include "fs.h"
 #include "file.h"
-// #include "kalloc.h"
 
 #define MAX_PAGES (PHYSTOP / PGSIZE)
 static uchar ref_counts[MAX_PAGES];
@@ -72,6 +71,29 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
 // be page-aligned.
 static int
 mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
+{
+  char *a, *last;
+  pte_t *pte;
+
+  a = (char*)PGROUNDDOWN((uint)va);
+  last = (char*)PGROUNDDOWN(((uint)va) + size - 1);
+  for(;;){
+    if((pte = walkpgdir(pgdir, a, 1)) == 0)
+      return -1;
+    if(*pte & PTE_P)
+      panic("remap");
+    *pte = pa | perm | PTE_P;
+    if(a == last)
+      break;
+    a += PGSIZE;
+    pa += PGSIZE;
+  }
+  return 0;
+}
+
+//same function as mappages but non static
+int
+mapthepages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
 {
   char *a, *last;
   pte_t *pte;
@@ -368,12 +390,9 @@ copyuvm(pde_t *pgdir, uint sz)
       flags |= PTE_COW;
     }
 
-    // acquire(&kmem.lock);
-    // ref_counts[pa / PGSIZE]++;
-    // release(&kmem.lock);
-
     incr_ref_count(pa / PGSIZE);    
 
+    // copy existing parent's mapping rather than allocating new pages - make this change
     if((mem = kalloc()) == 0)
       goto bad;
 
@@ -383,10 +402,6 @@ copyuvm(pde_t *pgdir, uint sz)
       kfree(mem);
       goto bad;
     }
-
-    // if(mappages(d, (void*)i, PGSIZE, pa, flags) < 0) {
-    //   goto bad;
-    // }
   }
 
   // flush TLB for parent

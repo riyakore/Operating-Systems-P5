@@ -205,11 +205,28 @@ fork(void)
   // copy memory mappings from parent to child
   np->num_mmaps = curproc->num_mmaps;
   for (i = 0; i < curproc->num_mmaps; i++) {
-    np->mmaps[i] = curproc->mmaps[i];
-    struct mmap_region *region = &curproc->mmaps[i];
-    if (region->f) {
-      filedup(region->f);
+
+    // NEW ADDED THIS IN FORK
+    struct mmap_region *parent_region = &curproc->mmaps[i];
+    struct mmap_region *child_region = &np->mmaps[i];
+
+    // copying all of it
+    *child_region = *parent_region;
+
+    for (uint va = parent_region->start_addr; va < parent_region->start_addr + parent_region->length; va += PGSIZE) {
+      pte_t *pte = walkpgdir(curproc->pgdir, (void *)va, 0);
+      if (pte && (*pte & PTE_P)) {
+        uint pa = PTE_ADDR(*pte);
+        // adding the same page table from the parent to the child so that they share the same physical pages
+        mapthepages(np->pgdir, (void*)va, PGSIZE, pa, PTE_FLAGS(*pte));
+        incr_ref_count(pa / PGSIZE);
+      }
     }
+
+    if (parent_region->f) {
+      filedup(parent_region->f);
+    }
+    // TILL HERE
   }
 
   // Clear %eax so that fork returns 0 in the child.
@@ -266,22 +283,6 @@ exit(void)
   iput(curproc->cwd);
   end_op();
   curproc->cwd = 0;
-
-  // uint a;
-  // for (a = 0; a < curproc->sz; a += PGSIZE) {
-  //   pte_t *pte = walkpgdir(curproc->pgdir, (void *)a, 0);
-  //   if (pte && (*pte & PTE_P)) {
-  //     uint pa = PTE_ADDR(*pte);
-  //     char *v = P2V(pa);
-
-  //     kfree(v);
-  //   }
-  // }
-
-  // for (int i = 0; i < curproc->num_mmaps; i++) {
-  //   wunmap(curproc->mmaps[i].start_addr);
-  // }
-  // curproc->num_mmaps = 0;
 
   acquire(&ptable.lock);
 

@@ -10,15 +10,10 @@
 #include "sleeplock.h"
 #include "fs.h"
 #include "file.h"
-// #include "kalloc.h"
 
 #ifndef min
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #endif
-
-// struct file {
-//   uint off; // File offset
-// };
 
 // Interrupt descriptor table (shared by all CPUs).
 struct gatedesc idt[256];
@@ -134,22 +129,6 @@ trap(struct trapframe *tf)
         kfree((char *)P2V(pa));
       }
 
-      // cprintf("kfree: ref_counts[%d] = %d\n", pa, ref_counts[pa]);
-
-      // acquire(&kmem.lock);
-      // // either add decrement and check if 0
-      // // or remove decrement and check if 1
-      // ref_counts[pa / PGSIZE]--;
-      // if (ref_counts[pa / PGSIZE] == 0) {
-      //   release(&kmem.lock);
-      //   kfree((char *)P2V(pa));
-      // }
-      // else {
-      //   // ref_counts[pa / PGSIZE]--;
-      //   release(&kmem.lock);
-      // }
-      // kfree((char *)P2V(pa));
-
       return;
     }
 
@@ -167,6 +146,36 @@ trap(struct trapframe *tf)
 
       // check if the fault address falls within the region
       if (fault_addr >= region->start_addr && fault_addr < region->start_addr + region->length) {
+
+        // ADDED THIS TO HANDLE ANONYMOUS MAPPING
+        if (region->flags & MAP_ANONYMOUS) {
+          char *mem = kalloc();
+          if (!mem) {
+            cprintf("Lazy allocation failed: out of memory\n");
+            p->killed = 1;
+            return;
+          }
+
+          memset(mem, 0, PGSIZE);
+
+          pte_t *pte = walkpgdir(p->pgdir, (void *)PGROUNDDOWN(fault_addr), 1);
+          if (!pte) {
+            cprintf("Lazy allocation failed: page table alloc failed\n");
+            kfree(mem);
+            p->killed = 1;
+            return;
+          }
+
+          *pte = V2P(mem) | PTE_P | PTE_W | PTE_U;
+
+          region->loaded_pages++;
+
+          lcr3(V2P(p->pgdir));
+
+          return;
+        }
+
+
         char *mem = kalloc();
         if (!mem) {
           cprintf("Lazy allocation failed: out of memory\n");
