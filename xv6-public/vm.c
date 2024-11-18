@@ -257,7 +257,6 @@ loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz, int fl
       return -1;
 
     // apply the permissions based on the flag provided
-    // *pte = (*pte & ~PTE_W) | perm;
     *pte = (*pte & ~0xFFF) | perm | PTE_P;
   }
   return 0;
@@ -291,6 +290,7 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
       kfree(mem);
       return 0;
     }
+    incr_ref_count(V2P(mem) / PGSIZE);
   }
   return newsz;
 }
@@ -317,15 +317,12 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
       pa = PTE_ADDR(*pte);
       if(pa == 0)
         panic("kfree");
-      // // added this
-      // decr_ref_count(pa / PGSIZE);
-      // if (get_ref_count(pa / PGSIZE) == 0) {
-      //   char *v = P2V(pa);
-      //   kfree(v);
-      // }
-      // // char *v = P2V(pa);
-      // // kfree(v);
-      // // till here
+
+      decr_ref_count(pa / PGSIZE);
+      if (get_ref_count(pa / PGSIZE) == 0) {
+        char *v = P2V(pa);
+        kfree(v);
+      }
       *pte = 0;
     }
   }
@@ -341,7 +338,9 @@ freevm(pde_t *pgdir)
 
   if(pgdir == 0)
     panic("freevm: no pgdir");
+
   deallocuvm(pgdir, KERNBASE, 0);
+
   for(i = 0; i < NPDENTRIES; i++){
     if(pgdir[i] & PTE_P){
       char * v = P2V(PTE_ADDR(pgdir[i]));
@@ -364,16 +363,28 @@ clearpteu(pde_t *pgdir, char *uva)
   *pte &= ~PTE_U;
 }
 
+int
+is_shared(struct proc *p, uint va) {
+  int i;
+  for (i = 0; i < p->num_mmaps; i++) {
+    struct mmap_region *region = &p->mmaps[i];
+    uint start = region->start_addr;
+    uint end = start + PGROUNDUP(region->length);
+    if (va >= start && va < end) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
 // Given a parent process's page table, create a copy
 // of it for a child.
 pde_t*
-copyuvm(pde_t *pgdir, uint sz)
+copyuvm(pde_t *pgdir, uint sz, struct proc *p)
 {
   pde_t *d;
   pte_t *pte;
   uint pa, i, flags;
-  // char *mem;
-  // struct proc *p = myproc();
 
   if((d = setupkvm()) == 0)
     return 0;
@@ -391,66 +402,29 @@ copyuvm(pde_t *pgdir, uint sz)
     pa = PTE_ADDR(*pte);
     flags = PTE_FLAGS(*pte);
 
-    // skip the init process and dont implement COW on it
-    // if (parent->pid == 1) {
-    //   // for inital process, allocate new pages
-    //   if((mem = kalloc()) == 0) {
-    //     goto bad;
-    //   }
-    //   memmove(mem, (char*)P2V(pa), PGSIZE);
-    //   if(mappages(d, (void*)i, PGSIZE, V2P(mem), flags) < 0) {
-    //     kfree(mem);
-    //     goto bad;
-    //   }
-    //   continue;
-    // }
+    if (is_shared(p, i)) {
+      if(mappages(d, (void*)i, PGSIZE, pa, flags) < 0) {
+        goto bad;
+      }
 
-    // mapping the same physical pages from parent to child
-    // if(mappages(d, (void*)i, PGSIZE, pa, flags) < 0) {
-    //   goto bad;
-    // }
-
-    // setting the pages read-only
-    if (flags & PTE_W){
-      // updating the parent's page table entry
-      // *pte &= ~PTE_W;
-      // *pte |= PTE_COW;
-
-      // added this
-      // pte_t *child_pte = walkpgdir(d, (void *) i, 0);
-      // if(!child_pte) {
-      //   panic("copyuvm: child_pte should exist");
-      // }
-      // updating the child's page table entry
-      flags &= ~PTE_W;
-      flags |= PTE_COW;
-
-      // *child_pte &= ~PTE_W;
-      // *child_pte |= PTE_COW;
+      incr_ref_count(pa / PGSIZE);
     }
 
-    if(mappages(d, (void*)i, PGSIZE, pa, flags) < 0) {
-      goto bad;
+    else {
+      if (flags & PTE_W) {
+        flags &= ~PTE_W;
+        flags |= PTE_COW;
+      }
+
+      if(mappages(d, (void*)i, PGSIZE, pa, flags) < 0) {
+        goto bad;
+      }
+
+      incr_ref_count(pa / PGSIZE);
     }
-
-    incr_ref_count(pa / PGSIZE);    
-
-    // copy existing parent's mapping rather than allocating new pages - make this change
-    // the code i have commented out defeats the purpose of COW
-    // if((mem = kalloc()) == 0)
-    //   goto bad;
-
-    // memmove(mem, (char*)P2V(pa), PGSIZE);
-
-    // if(mappages(d, (void*)i, PGSIZE, V2P(mem), flags) < 0) {
-    //   kfree(mem);
-    //   goto bad;
-    // }
 
   }
 
-  // flush TLB for parent
-  // lcr3(V2P(pgdir));
   return d;
 
 bad:

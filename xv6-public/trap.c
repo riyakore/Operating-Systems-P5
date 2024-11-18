@@ -118,19 +118,10 @@ trap(struct trapframe *tf)
       // if the child wants to write, then copy the contents of the og page to the new page
       memmove(mem, (char *)P2V(pa), PGSIZE);
 
-      // update page table entry to point to the new page with write permissions
-      // uint flags = PTE_FLAGS(*pte);
-      // flags &= ~PTE_COW;
-      // flags |= PTE_W;
-
-      // update the page table entry to point to the new page with write permissions
-      // *pte = V2P(mem) | PTE_FLAGS(*pte) | PTE_W;
-      // *pte &= ~PTE_COW;
-
       *pte = V2P(mem) | PTE_P | PTE_W | PTE_U;
 
-      // flush the TLB to ensure changes to the page table are effectice
-      // lcr3(V2P(p->pgdir));
+      // increment reference count for the new page
+      incr_ref_count(V2P(mem) / PGSIZE);
 
       // decrement the reference count of the original page
       decr_ref_count(pa / PGSIZE);
@@ -181,6 +172,7 @@ trap(struct trapframe *tf)
           *pte = V2P(mem) | PTE_P | PTE_W | PTE_U;
 
           region->loaded_pages++;
+          incr_ref_count(V2P(mem) / PGSIZE);
 
           lcr3(V2P(p->pgdir));
 
@@ -231,6 +223,7 @@ trap(struct trapframe *tf)
 
         // increment the loaded page count in the region
         region->loaded_pages++;
+        incr_ref_count(V2P(mem) / PGSIZE);
 
         return;
       }

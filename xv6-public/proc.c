@@ -176,6 +176,20 @@ growproc(int n)
   return 0;
 }
 
+int
+if_is_shared(struct proc *p, uint va) {
+  int i;
+  for (i = 0; i < p->num_mmaps; i++) {
+    struct mmap_region *region = &p->mmaps[i];
+    uint start = region->start_addr;
+    uint end = start + PGROUNDUP(region->length);
+    if (va >= start && va < end) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
 // Create a new process copying p as the parent.
 // Sets up stack to return as if from system call.
 // Caller must set state of returned proc to RUNNABLE.
@@ -192,7 +206,7 @@ fork(void)
   }
 
   // Copy process state from proc.
-  if((np->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == 0){
+  if((np->pgdir = copyuvm(curproc->pgdir, curproc->sz, curproc)) == 0){
     kfree(np->kstack);
     np->kstack = 0;
     np->state = UNUSED;
@@ -203,37 +217,38 @@ fork(void)
   *np->tf = *curproc->tf;
 
   // copy memory mappings from parent to child
-  // np->num_mmaps = curproc->num_mmaps;
-  // for (i = 0; i < curproc->num_mmaps; i++) {
+  np->num_mmaps = curproc->num_mmaps;
+  for (i = 0; i < curproc->num_mmaps; i++) {
+    struct mmap_region *parent_region = &curproc->mmaps[i];
+    struct mmap_region *child_region = &np->mmaps[i];
 
-  //   // NEW ADDED THIS IN FORK
-  //   struct mmap_region *parent_region = &curproc->mmaps[i];
-  //   struct mmap_region *child_region = &np->mmaps[i];
+    // copying all of it
+    *child_region = *parent_region;
 
-  //   // copying all of it
-  //   *child_region = *parent_region;
+    for (uint va = parent_region->start_addr; va < parent_region->start_addr + parent_region->length; va += PGSIZE) {
+      pte_t *pte = walkpgdir(curproc->pgdir, (void *)va, 0);
+      if (pte && (*pte & PTE_P)) {
+        uint pa = PTE_ADDR(*pte);
+        // adding the same page table from the parent to the child so that they share the same physical pages
+        mapthepages(np->pgdir, (void*)va, PGSIZE, pa, PTE_FLAGS(*pte));
+        incr_ref_count(pa / PGSIZE);
+      }
+    }
 
-  //   for (uint va = parent_region->start_addr; va < parent_region->start_addr + parent_region->length; va += PGSIZE) {
-  //     pte_t *pte = walkpgdir(curproc->pgdir, (void *)va, 0);
-  //     if (pte && (*pte & PTE_P)) {
-  //       uint pa = PTE_ADDR(*pte);
-  //       // adding the same page table from the parent to the child so that they share the same physical pages
-  //       mapthepages(np->pgdir, (void*)va, PGSIZE, pa, PTE_FLAGS(*pte));
-  //       incr_ref_count(pa / PGSIZE);
-  //     }
-  //   }
-
-  //   if (parent_region->f) {
-  //     filedup(parent_region->f);
-  //   }
-  //   // TILL HERE
-  // }
-
-  // added this
+    if (parent_region->f) {
+      filedup(parent_region->f);
+    }
+  }
 
   acquire(&ptable.lock);
   for(i = 0; i < curproc->sz; i += PGSIZE) {
+
+    if (if_is_shared(curproc, i)) {
+      continue;
+    }
+
     pte_t *pte = walkpgdir(curproc->pgdir, (void *) i, 0);
+
     if(!pte) {
       continue;
     }
@@ -241,8 +256,6 @@ fork(void)
     if(!(*pte & PTE_P)) {
       continue;
     }
-
-    // uint pa = PTE_ADDR(*pte);
     uint flags = PTE_FLAGS(*pte);
 
     if(flags & PTE_W) {
@@ -253,8 +266,6 @@ fork(void)
 
   lcr3(V2P(curproc->pgdir));
   release(&ptable.lock);
-
-  // till here
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
@@ -286,9 +297,6 @@ exit(void)
   struct proc *curproc = myproc();
   struct proc *p;
   int fd;
-
-  // modify this function so that it removes all the mappings from the current process's address space
-  // use this to prevent memory leaks when a user program forgets to call wunmap before exiting
 
   if(curproc == initproc)
     panic("init exiting");
