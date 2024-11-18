@@ -157,11 +157,6 @@ _forktest: forktest.o $(ULIB)
 	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o _forktest forktest.o ulib.o usys.o
 	$(OBJDUMP) -S _forktest > forktest.asm
 
-_wmaptest: wmaptest.o $(ULIB)
-	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o _wmaptest wmaptest.o $(ULIB)
-	$(OBJDUMP) -S _wmaptest > wmaptest.asm
-	$(OBJDUMP) -t _wmaptest | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > wmaptest.sym
-
 mkfs: mkfs.c fs.h
 	gcc -Werror -Wall -o mkfs mkfs.c
 
@@ -187,7 +182,6 @@ UPROGS=\
 	_usertests\
 	_wc\
 	_zombie\
-	_wmaptest\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
