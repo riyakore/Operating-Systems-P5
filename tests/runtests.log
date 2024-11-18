@@ -59,15 +59,15 @@ objdump -t kernel | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > kernel.sym
 dd if=/dev/zero of=xv6.img count=10000
 10000+0 records in
 10000+0 records out
-5120000 bytes (5.1 MB, 4.9 MiB) copied, 0.0495163 s, 103 MB/s
+5120000 bytes (5.1 MB, 4.9 MiB) copied, 0.0102787 s, 498 MB/s
 dd if=bootblock of=xv6.img conv=notrunc
 1+0 records in
 1+0 records out
-512 bytes copied, 0.000277016 s, 1.8 MB/s
+512 bytes copied, 4.3423e-05 s, 11.8 MB/s
 dd if=kernel of=xv6.img seek=1 conv=notrunc
 435+1 records in
 435+1 records out
-223008 bytes (223 kB, 218 KiB) copied, 0.00346194 s, 64.4 MB/s
+222976 bytes (223 kB, 218 KiB) copied, 0.000294796 s, 756 MB/s
 gcc -Werror -Wall -o mkfs mkfs.c
 gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o ulib.o ulib.c
 gcc -m32 -gdwarf-2 -Wa,-divide   -c -o usys.o usys.S
@@ -159,8 +159,8 @@ Running xv6 user progam /home/kore/private/cs537/Operating-Systems-P5/tests/ctes
 DEBUG: Copying header file to project path
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmptj0k6qka/p/Makefile
-/tmp/tmptj0k6qka/p/Makefile.test
+/tmp/tmpjfnq7ab2/p/Makefile
+/tmp/tmpjfnq7ab2/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -212,8 +212,8 @@ Running xv6 user progam /home/kore/private/cs537/Operating-Systems-P5/tests/ctes
 DEBUG: Copying header file to project path
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmptj0k6qka/p/Makefile
-/tmp/tmptj0k6qka/p/Makefile.test
+/tmp/tmpjfnq7ab2/p/Makefile
+/tmp/tmpjfnq7ab2/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -250,6 +250,12 @@ Segmentation Fault
 Segmentation Fault
 Segmentation Fault
 Segmentation Fault
+Segmentation Fault
+Segmentation Fault
+Segmentation Fault
+Segmentation Fault
+Segmentation Fault
+Segmentation Fault
 $ 
 
 test test_2 PASSED (1 of 1)
@@ -267,8 +273,8 @@ Running xv6 user progam /home/kore/private/cs537/Operating-Systems-P5/tests/ctes
 DEBUG: Copying header file to project path
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmptj0k6qka/p/Makefile
-/tmp/tmptj0k6qka/p/Makefile.test
+/tmp/tmpjfnq7ab2/p/Makefile
+/tmp/tmpjfnq7ab2/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -318,8 +324,8 @@ Running xv6 user progam /home/kore/private/cs537/Operating-Systems-P5/tests/ctes
 DEBUG: Copying header file to project path
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmptj0k6qka/p/Makefile
-/tmp/tmptj0k6qka/p/Makefile.test
+/tmp/tmpjfnq7ab2/p/Makefile
+/tmp/tmpjfnq7ab2/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -370,8 +376,8 @@ Running xv6 user progam /home/kore/private/cs537/Operating-Systems-P5/tests/ctes
 DEBUG: Copying header file to project path
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmptj0k6qka/p/Makefile
-/tmp/tmptj0k6qka/p/Makefile.test
+/tmp/tmpjfnq7ab2/p/Makefile
+/tmp/tmpjfnq7ab2/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -425,8 +431,8 @@ Running xv6 user progam /home/kore/private/cs537/Operating-Systems-P5/tests/ctes
 DEBUG: Copying header file to project path
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmptj0k6qka/p/Makefile
-/tmp/tmptj0k6qka/p/Makefile.test
+/tmp/tmpjfnq7ab2/p/Makefile
+/tmp/tmpjfnq7ab2/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -446,8 +452,7 @@ iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+1FF8B4A0+1FECB4A0 CA00
 Press Ctrl-B to configure iPXE (PCI 00:03.0)...                                                                               
 
 
-Booting from Hard Disk...
-xv6...
+Booting from Hard Disk..xv6...
 cpu0: starting 0
 sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
 init: starting sh
@@ -478,8 +483,8 @@ Running xv6 user progam /home/kore/private/cs537/Operating-Systems-P5/tests/ctes
 DEBUG: Copying header file to project path
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmptj0k6qka/p/Makefile
-/tmp/tmptj0k6qka/p/Makefile.test
+/tmp/tmpjfnq7ab2/p/Makefile
+/tmp/tmpjfnq7ab2/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -536,8 +541,8 @@ Running xv6 user progam /home/kore/private/cs537/Operating-Systems-P5/tests/ctes
 DEBUG: Copying header file to project path
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmptj0k6qka/p/Makefile
-/tmp/tmptj0k6qka/p/Makefile.test
+/tmp/tmpjfnq7ab2/p/Makefile
+/tmp/tmpjfnq7ab2/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -644,8 +649,8 @@ Running xv6 user progam /home/kore/private/cs537/Operating-Systems-P5/tests/ctes
 DEBUG: Copying header file to project path
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmptj0k6qka/p/Makefile
-/tmp/tmptj0k6qka/p/Makefile.test
+/tmp/tmpjfnq7ab2/p/Makefile
+/tmp/tmpjfnq7ab2/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -700,8 +705,8 @@ Running xv6 user progam /home/kore/private/cs537/Operating-Systems-P5/tests/ctes
 DEBUG: Copying header file to project path
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmptj0k6qka/p/Makefile
-/tmp/tmptj0k6qka/p/Makefile.test
+/tmp/tmpjfnq7ab2/p/Makefile
+/tmp/tmpjfnq7ab2/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -764,8 +769,8 @@ Running xv6 user progam /home/kore/private/cs537/Operating-Systems-P5/tests/ctes
 DEBUG: Copying header file to project path
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmptj0k6qka/p/Makefile
-/tmp/tmptj0k6qka/p/Makefile.test
+/tmp/tmpjfnq7ab2/p/Makefile
+/tmp/tmpjfnq7ab2/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -820,8 +825,8 @@ Running xv6 user progam /home/kore/private/cs537/Operating-Systems-P5/tests/ctes
 DEBUG: Copying header file to project path
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmptj0k6qka/p/Makefile
-/tmp/tmptj0k6qka/p/Makefile.test
+/tmp/tmpjfnq7ab2/p/Makefile
+/tmp/tmpjfnq7ab2/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -872,8 +877,8 @@ Running xv6 user progam /home/kore/private/cs537/Operating-Systems-P5/tests/ctes
 DEBUG: Copying header file to project path
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmptj0k6qka/p/Makefile
-/tmp/tmptj0k6qka/p/Makefile.test
+/tmp/tmpjfnq7ab2/p/Makefile
+/tmp/tmpjfnq7ab2/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -925,8 +930,8 @@ Running xv6 user progam /home/kore/private/cs537/Operating-Systems-P5/tests/ctes
 DEBUG: Copying header file to project path
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmptj0k6qka/p/Makefile
-/tmp/tmptj0k6qka/p/Makefile.test
+/tmp/tmpjfnq7ab2/p/Makefile
+/tmp/tmpjfnq7ab2/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -979,8 +984,8 @@ Running xv6 user progam /home/kore/private/cs537/Operating-Systems-P5/tests/ctes
 DEBUG: Copying header file to project path
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmptj0k6qka/p/Makefile
-/tmp/tmptj0k6qka/p/Makefile.test
+/tmp/tmpjfnq7ab2/p/Makefile
+/tmp/tmpjfnq7ab2/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -1039,8 +1044,8 @@ Running xv6 user progam /home/kore/private/cs537/Operating-Systems-P5/tests/ctes
 DEBUG: Copying header file to project path
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmptj0k6qka/p/Makefile
-/tmp/tmptj0k6qka/p/Makefile.test
+/tmp/tmpjfnq7ab2/p/Makefile
+/tmp/tmpjfnq7ab2/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -1097,11 +1102,11 @@ Fork: Same maps exist in both parent and multiple childs
 
 **********************************************************************
 Running xv6 user progam /home/kore/private/cs537/Operating-Systems-P5/tests/ctests/test_17.c
-/tmp/tmptj0k6qka/p/Makefile
-/tmp/tmptj0k6qka/p/Makefile.test
 DEBUG: Copying header file to project path
 Trying to build project using make
 make xv6.img fs.img
+/tmp/tmpjfnq7ab2/p/Makefile
+/tmp/tmpjfnq7ab2/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -1137,16 +1142,16 @@ INFO: 115
 INFO: Created file big.txt with length 12288 bytes. 	Okay.
 INFO: Placed map 1 at 0x60000000 with length 12288. 	Okay.
 INFO: Placed map 2 at 0x60004000 with length 12388. 	Okay.
-INFO: Map 1 and 2 exist in Child (pid INFO: Map 1 and 2 exis4). 	Okay.
-t in ChINFO: Map 1 and 2 exist in INFO: Map 1 and 2 exist in Cild (pid 5). 	Okay.
-Child (pid 6). 	Okay.
-hilINFO: Map 1 and 2 exist d (pid 7). 	Okay.in Child (pid 8). INFO: Map 1 and 2 
-	Okexist in Chay.
-iINFO: Map 1 aINFO: Map 1 and 2 exisld nd 2 exist in Chilt in Child (pid 11). 	O(pid 9). 	Okay.
-d (pid 10). 	Okay.
-kay.
-INFO: Map 1 and 2 exist in ChINFO: Map 1 and 2 exisild (pid 12). 	Okayt in Child (p.
-id 13). 	Okay.
+INFO: Map 1 and 2 exist in Child (pid 4). 	Okay.
+INFO: Map 1 and 2 exist in Child (pid 5). 	Okay.
+INFO: Map 1 and 2 exist in Child (pid 6). 	Okay.
+INFO: Map 1 and 2 exist in Child (pid 7). 	Okay.
+INFO: Map 1 and 2 exist in Child (pid 8). 	Okay.
+INFO: MaINFO: Map 1 and 2 exist in Child (pid 10). 	Okay.
+INFO: Map 1 and 2 exist in Child (pid 11). 	Okay.
+INFO: Map 1 and 2 exist in Child (pid 12). 	Okay.
+INFO: Map 1 and 2 exist in Child (pip 1 and 2 exist in Child (pid 9). 	Okay.
+d 13). 	Okay.
 INFO: Map 1 and 2 exist in Parent (pid 3). 	Okay.
 [0;32mSUCCESS:[0m TEST_17	 PASSED
 
@@ -1167,8 +1172,8 @@ Running xv6 user progam /home/kore/private/cs537/Operating-Systems-P5/tests/ctes
 DEBUG: Copying header file to project path
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmptj0k6qka/p/Makefile
-/tmp/tmptj0k6qka/p/Makefile.test
+/tmp/tmpjfnq7ab2/p/Makefile
+/tmp/tmpjfnq7ab2/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -1188,8 +1193,7 @@ iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+1FF8B4A0+1FECB4A0 CA00
 Press Ctrl-B to configure iPXE (PCI 00:03.0)...                                                                               
 
 
-Booting from Hard Disk...
-xv6...
+Booting from Hard Disk..xv6...
 cpu0: starting 0
 sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
 init: starting sh
@@ -1204,16 +1208,16 @@ INFO: 114
 INFO: Created file big.txt with length 8192 bytes. 	Okay.
 INFO: Placed map 1 at 0x60000000 with length 8192. 	Okay.
 INFO: Placed map 2 at 0x60003000 with length 8292. 	Okay.
-INFO: Map 1 and 2 exist in Child (piINFO: Md 4).ap 1 and 2 INFO: Map 1 and 2 exis 	Oexist in Child (t in Child (pid 6). 	Okay.
-kay.
-pid 5). 	Okay.
-INFO: Map 1 and 2 exist in Child (pid 7). 	Okay.
-INFO: Map 1 and 2 INFO: Map 1 and 2 exist in Child (pid 9). 	Okay.
-eINFO: Map 1 and 2 exist in Child (pid 10). 	Okay.
-INFO: Map 1 and 2 exist in Child (pid 12). INFO: Map 1 and 2 exist inxist in Child (pid 8). 	Okay.
-INFO: Map 1 and 2 exist in	Okay.
- Child (pid 11). 	Okay.
- Child (pid 13). 	Okay.
+INFO: Map 1 and 2 exist in Child (pid 4). 	Okay.
+INFO: Map 1 and 2 exist in Child (pid 5). 	Okay.
+INFO: Map 1 and 2 exist in Child (pid 6). 	Okay.
+INFO: Map 1 and 2 exist in Child (INFO: Map 1 and 2 exist in Child (pid 8). 	Okay.
+INFO: Map 1 and 2 exist in Child (pid 9). 	Okay.
+INFO: Map 1 and 2 exist in Child (pid 10). 	Okay.
+INFO: Map 1 and 2 exist in Child (pid 11). 	Okay.
+INFO: Map 1 and 2 exist in Child (pid 12). 	Okay.
+INFO: Map 1 and 2 exist in Child (pid 13). 	Okay.
+pid 7). 	Okay.
 INFO: Map 1 and 2 exist in Parent (pid 3). 	Okay.
 [0;32mSUCCESS:[0m TEST_18	 PASSED
 
@@ -1234,8 +1238,8 @@ Running xv6 user progam /home/kore/private/cs537/Operating-Systems-P5/tests/ctes
 DEBUG: Copying header file to project path
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmptj0k6qka/p/Makefile
-/tmp/tmptj0k6qka/p/Makefile.test
+/tmp/tmpjfnq7ab2/p/Makefile
+/tmp/tmpjfnq7ab2/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -1289,8 +1293,8 @@ Running xv6 user progam /home/kore/private/cs537/Operating-Systems-P5/tests/ctes
 DEBUG: Copying header file to project path
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmptj0k6qka/p/Makefile
-/tmp/tmptj0k6qka/p/Makefile.test
+/tmp/tmpjfnq7ab2/p/Makefile
+/tmp/tmpjfnq7ab2/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -1310,8 +1314,7 @@ iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+1FF8B4A0+1FECB4A0 CA00
 Press Ctrl-B to configure iPXE (PCI 00:03.0)...                                                                               
 
 
-Booting from Hard Disk...
-xv6...
+Booting from Hard Disk..xv6...
 cpu0: starting 0
 sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
 init: starting sh
@@ -1346,8 +1349,8 @@ Running xv6 user progam /home/kore/private/cs537/Operating-Systems-P5/tests/ctes
 DEBUG: Copying header file to project path
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmptj0k6qka/p/Makefile
-/tmp/tmptj0k6qka/p/Makefile.test
+/tmp/tmpjfnq7ab2/p/Makefile
+/tmp/tmpjfnq7ab2/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -1378,6 +1381,18 @@ tester
 TEST_21
 Segmentation Fault
 Segmentation Fault
+Segmentation Fault
+Segmentation Fault
+Segmentation Fault
+Segmentation Fault
+Segmentation Fault
+Segmentation Fault
+Segmentation Fault
+Segmentation Fault
+Segmentation Fault
+Segmentation Fault
+Segmentation Fault
+Segmentation Fault
 $ 
 
 test test_21 PASSED (1 of 1)
@@ -1395,8 +1410,8 @@ Running xv6 user progam /home/kore/private/cs537/Operating-Systems-P5/tests/ctes
 DEBUG: Copying header file to project path
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmptj0k6qka/p/Makefile
-/tmp/tmptj0k6qka/p/Makefile.test
+/tmp/tmpjfnq7ab2/p/Makefile
+/tmp/tmpjfnq7ab2/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -1428,25 +1443,25 @@ TEST_22
 Parent: sum = 1012960
 INFO: Parent: arr pa = 0xDFC0000
 Child: sum = 1012960
-INFO: CChild: sum = 1Child: hild: arr pa = 0xDFC0012960
-INFO: sum = 10129600Child: a
-INFO: Child: arr pa00
-r = 0xDFC0000
-Child: sum r pa =Child: sum = 10= 101296 0xDFC00012960
-INFO: Child: 0
-INFO: Child: arr pa = 0xDFC00
-arr pa = 0xDFC0000
-0Child: sum = 1012960
-INFO:Child: sum = 1012960
-I0 Child: arr pa = 0xDFC0NFO: Child: arr pa = 0
-0xDFC0000
-CChild: sum = 101296Chihild0
-INFOld: s000
-:: Child: um = 1012960
- arr pa = 0xDINFO: Child: arr sum = 1012960
-INFO: ChilFC0000
-pda = 0xDFC0000
-: arr pa = 0xDFC0000
+INFO: Child: arr pa = 0xDFC0000
+ChChild: sum = 1012960
+INFO: Child: arr pa = 0xDFC0000
+Child: sum = 1012960
+INFO: Child: arr pa = 0xDFC0000
+Child: sum = 1012960
+INFO: Child: arr pa = 0xDFC0000
+Child: sum = 1012960
+INFO: Child: arr pa = 0xDFC0000
+Child: sum = 1012960
+INFO: Child: arr pa = 0xDFC0000
+Child: sum = 1012960
+INFO: Child: arr pa = 0xDFC0000
+Child: sum = 1012960
+INFO: Child: arr pa = 0xDFC0000
+Child: sum = 1012960
+INFO: Child: arr pa = 0xDFC0000
+ild: sum = 1012960
+INFO: Child: arr pa = 0xDFC0000
 [0;32mSUCCESS:[0m TEST_22	 PASSED
 
 $ 
@@ -1466,8 +1481,8 @@ Running xv6 user progam /home/kore/private/cs537/Operating-Systems-P5/tests/ctes
 DEBUG: Copying header file to project path
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmptj0k6qka/p/Makefile
-/tmp/tmptj0k6qka/p/Makefile.test
+/tmp/tmpjfnq7ab2/p/Makefile
+/tmp/tmpjfnq7ab2/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -1499,45 +1514,45 @@ TEST_23
 Parent: sum = 1012960
 INFO: Parent: arr pa = 0xDFC0000
 Child: sum = 1012960
-INFO: Child: arr pa = 0xChild: sum = 101296Child: sum = 10129Child: sum = 10129DFC00
-INFO: Child: a60
-INFO: Child: 000
-Child: modrr pa = 0xDFC0arr pa = 0xDFC0000
-ified sum = 501460
-IN000
-Child: modified sum = 501460
-Child: modified sum =FO: Child: arr new_pa = 0xDC5INFO: Child: arr new_pa = 060
 INFO: Child: arr pa = 0xDFC0000
- 501460
-INFO: Child: arr new_pa =A000
-xDC55000
-Child: modifie 0xDC50000
-Child: sum = 1012960
-IChild: sum = 1012960
-INFO: Child: arr pa = d sum = 501460
-INFNFO: Child: arr pa = 0xDFC0000
-0xDFC0000
 Child: modified sum = 501460
+INFO: Child: arr new_pa = 0xDC5A000
+Child: sum = 1012960
+INFO: Child: Child: sum = 1012960
+INFO: Child: arr pa = 0xDFC0000
+Child: modified sum = 501460
+INFO: Child: arr new_pa = 0xDChild: sum = 1012960
+INFO: Child: arr pa = 0xDFC0000
+Child: modified sum = 501460
+INFO: Child: arr new_pa = a0xDC50000
+Child: sum = 1012960
+INFO: Child: arr pa = 0xDFC0000
+Child: modified sum = 501460
+INFO: Child: arr new_pa = 0xDFC6000
+Child: sum = 1012960
 INFOChild: sum = 1012960
-INFO: Child:O: Child: arr new_pa = 0xDChild: modified sum = 501460
-INFO: Chil: Child: arr new_pa = 0xDE02000
- arr pa = 0xDFC0000
-CChild: sum = 1012960
-INFO: Child: arr Child: sum = 1012960
-IChild: sum = 1012960
-INFO: Chhild: modified sum =NFO: Child: arr pa = 0xDFC0000
-Child: modified sum = 50ild: arr pa = 0xDFC0000
-Ch 501460
-INFO: Chipa = 0xDFC0000
-Child: modified 1460
-INFild: modified sum = 501460
-sum = 501460
-INFO: CO: Child: arr new_pa = 0INFO: Child: arr new_pa = 0xhild: arr new_pa = 0xDD7F000
-xDD7A000
-Cd: arr new_ld: arr new_pa = 0xDE07000
-D4B000
-pa = 0xDDB6000
-E3E000
+INFO: Child: arr pa = 0xDFC0000
+Child: modified sum = 501460
+INFO: Child: arr new_pa = 0xDECF000
+Child: sum = 1012960
+INFO: Child: arr pa = 0xDFC0000
+Child: sum = 1012960
+INFO: Child: arr pa = 0xDFC0000
+Child: modified sum = 501460
+INFO: Child: arr new_pa = 0xDFFD000
+Child: sum = 1012960
+INFO: Child: arr pa = 0xDFC0000
+Childrr pa = 0xDFC0000
+Child: modified sum = 501460
+INFO: Child: arr new_pa = 0xDCEB000
+C55000
+: Child: arr pa = 0xDFC0000
+Child: modified sum = 501460
+INFOChild: modified sum = 501460
+INFO: Child: arr new_pa = 0xDCB4000
+: modified sum = 501460
+INFO: Child: arr new_pa = 0xDFF8000
+: Child: arr new_pa = 0xDCAF000
 [0;32mSUCCESS:[0m TEST_23	 PASSED
 
 $ 
@@ -1557,8 +1572,8 @@ Running xv6 user progam /home/kore/private/cs537/Operating-Systems-P5/tests/ctes
 DEBUG: Copying header file to project path
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmptj0k6qka/p/Makefile
-/tmp/tmptj0k6qka/p/Makefile.test
+/tmp/tmpjfnq7ab2/p/Makefile
+/tmp/tmpjfnq7ab2/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -1591,53 +1606,53 @@ Parent: sum = 1012960
 INFO: Parent: arr pa = 0xDFC0000
 Child: sum = 1012960
 INFO: Child: arr pa = 0xDFC0000
-ChilChild: sum = 1012960
-INFd: sum = 501460
-INFO:O: Child: arr pChild: sum = 1 Child: arr new_pa = 0xDE53000
-INFO: Chia = 0xDFC0012960
-ld sz 0xF0000
-INFO: ChildChild: sum = 1012960Chil0
-I0
-d: arr pa = 0xNFO: C:DFC0000
-Child: hild: arr pa = 0xDFC0000Child: sum = 1012960
- sum = 501460
-I
 Child: sum = 501460
-INFO: Child:INFO: Child: arr pa = 0xDFC0000NFO: Child: arr new_p arr new_pa = 0xDECF000
-INFO: Child sz
-Child: sum a 0xF000
-Child: sum = 501460
-= 1012960
- = 0xDC53000
-INFOINFO: Child: arrINFO: Child: Child sz 0xF000
-sum = 501460
- new_pa = 0xDFFA000
-: arr pa = 0xDFC0000
-INFO: Child: arr new_pa = 0xINChild: sum = 501460Child: sum = 1012960
-IFO: Child sz 0xF000
-
-NChild: sum = 1012960
-IINFO: ChildFO: Child: arr pa NFO: Child: arr p: arr new_pa = 0xDE88000
-I= a = 0xDFC0000
-ChilNFO: Child0xDFC0000
-Child: sum = 5d: sum = 501460
-INFO: Child: a sz 0xF000
-0rr new_pa = 0xDDB4000
+INFO: Child: arr new_pa = 0xDC5A000
+INFO: Child sz 0xF000
 Child: sum = 1012960
-1460
-IINFO: CINFO: Child: arr pa = Nhild sz 0xF000
-0xDFC0000
-Child:DFC6000
-INFFO: Child: arr new_pa = 0xDDB9Child: sum =O: Child sz 0xF0000
-INFO: Child sz 0xF000
-  s00
-501460
-um = 101296INFO: Ch0
 INFO: Child: arr pa = 0xDFC0000
-Child:ild:  sum = 501460
-INFO: Child: arr new_pa = 0xDE82000
+Child: sum = 501460
+INFO: Child: arr new_pa = 0xDC52000
 INFO: Child sz 0xF000
-arr new_pa = 0xDCE5000
+Child: sum = 1012960
+INFO: Child: arr pa = 0xDFC0000
+Child: sum = 501460
+INFO: Child: arr new_pa = 0xDECD000
+INFO: Child sz 0xF000
+Child: sum = 1012960
+INFO: Child: arr pa = 0xDFC0000
+Child: sum = 501460
+INFO: Child: arr new_pa = 0xDE89000
+INFO: Child sz 0xF000
+Child: sum = 1012960
+INFO: Child: arr pa = 0xDFC0000
+Child: sum = 501460
+INFO: Child: arr new_pa = 0xDE83000
+INFO: Child sz 0xF000
+Child: sum = 1012960
+INFO: Child: arr pa = 0xDFC0000
+Child: sum = 501460
+INFO: Child: arr new_pa = 0xDDFB000
+INFO: Child sz 0xF000
+Child: sum = 1012960
+INFO: Child: arr pa = 0xDFC0000
+Child: sum = 1012960
+INFO: Child: arr pa = 0xDFC0000
+Child: sum = 501460
+INFO: Child: arr new_pa = 0xDDC2000
+INFO: Child sz 0xF000
+Child: sum = 1012960
+INFO: Child: arr pa = 0xDFCChild: sum = 1012960
+INFO: Child: arr pa = 0xDFC0000
+Child: sum = 501460
+INFO: Child: arr new_pa = 0xDDCA000
+INFO: Child sz 0xF000
+Child: sum = 501460
+INFO: 0000
+Child: sum = 501460
+INFO: Child: arr new_pa = 0xDC6B000
+INFO: Child sz 0xF000
+Child: arr new_pa = 0xDCA7000
 INFO: Child sz 0xF000
 [0;32mSUCCESS:[0m TEST_24	 PASSED
 
@@ -1658,8 +1673,8 @@ Running xv6 user progam /home/kore/private/cs537/Operating-Systems-P5/tests/ctes
 DEBUG: Copying header file to project path
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmptj0k6qka/p/Makefile
-/tmp/tmptj0k6qka/p/Makefile.test
+/tmp/tmpjfnq7ab2/p/Makefile
+/tmp/tmpjfnq7ab2/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
