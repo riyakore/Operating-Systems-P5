@@ -45,5 +45,25 @@
 - sysproc.c
 - syscall.h
 - syscall.c
-- 
+- user.h
+- usys.S
+- defs.h
+### This concludes task 5
+
+## Changes made in the files for task 6 (implementing the getwmapinfo system call):
+- vm.c
+- sysproc.c
+- syscall.c
+- syscall.h
+- user.h
+- usys.S
+- defs.h
+### This concludes tast 6
+
+## Changes made in the files to make all the test cases pass
+- proc.c
+- defs.h
+- vm.c
+- trap.c
+### All tests are now passing. No memory leaks as well.
 
